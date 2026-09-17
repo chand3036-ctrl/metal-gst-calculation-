@@ -27,6 +27,12 @@
   #btnGold.active { background: #ffcc00; color: #1c1c1e; }
   #btnSilver.active { background: #8e8e93; color: #fff; }
 
+  .summary-box { background: #f8f9fa; border: 1px solid #e5e5ea; border-radius: 8px; padding: 10px; margin-bottom: 12px; font-size: 13px; }
+  .summary-row { display: flex; justify-content: space-between; margin-bottom: 4px; }
+  .summary-row:last-child { margin-bottom: 0; }
+  .summary-row span:first-child { font-weight: 600; color: #3a3a3c; }
+  .summary-row span:last-child { font-weight: 700; color: #007aff; }
+
   .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; position: relative; }
   table { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 750px; }
   th, td { padding: 8px 6px; text-align: right; border-bottom: 1px solid #e5e5ea; white-space: nowrap; }
@@ -51,36 +57,57 @@
   tbody tr:nth-child(even) .sticky-col { background-color: #f2f9ff !important; }
   tbody tr:nth-child(odd) .sticky-col { background-color: #ffffff !important; }
 
-  /* Option A: Alternating row colors */
-  tbody tr:nth-child(even) { background-color: #f2f9ff; }
-  tbody tr:nth-child(odd) { background-color: #ffffff; }
+  tbody tr:nth-child(even) { background-color: #f2f9ff; cursor: pointer; }
+  tbody tr:nth-child(odd) { background-color: #ffffff; cursor: pointer; }
   tbody tr:hover { background-color: #e5f0ff; }
 
   .action-btns { display: flex; gap: 6px; justify-content: center; }
   .action-btns button { width: auto; padding: 4px 8px; font-size: 11px; margin-bottom: 0; }
   .empty { text-align: center; color: #8e8e93; padding: 20px; font-size: 14px; }
-  
-  /* Editing state highlight */
-  .editing-highlight { border: 2px solid #ff9500; box-shadow: 0 0 10px rgba(255,149,0,0.3); }
+
+  /* Modal Styles */
+  .modal-overlay {
+    display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;
+  }
+  .modal-overlay.show { display: flex; }
+  .modal-content {
+    background: #fff; border-radius: 12px; padding: 20px; width: 90%; max-width: 400px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2); position: relative; animation: popIn 0.2s ease-out;
+  }
+  @keyframes popIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  .modal-content h3 { margin-top: 0; text-align: center; font-size: 18px; }
+  .modal-detail { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #f2f2f7; font-size: 14px; }
+  .modal-detail span:first-child { font-weight: 600; color: #8e8e93; }
+  .modal-detail span:last-child { font-weight: 600; color: #1c1c1e; }
+  .modal-actions { display: flex; gap: 10px; margin-top: 15px; }
+  .modal-actions button { flex: 1; margin-bottom: 0; }
 
   /* Print styles */
   @media print {
     body { background: #fff; padding: 0; margin: 0; font-size: 11px; }
     .card { box-shadow: none; padding: 0; margin: 0; border: none; }
-    .no-print { display: none !important; }
+    .no-print, #formCard, .modal-overlay { display: none !important; }
     table { min-width: 100%; border: 1px solid #000; }
     th, td { border: 1px solid #000; padding: 4px; background: transparent !important; }
     .action-btns { display: none; }
     .sticky-col { position: static; box-shadow: none; }
+    .summary-box { border: 1px solid #000; margin-bottom: 10px; page-break-inside: avoid; }
+    .print-header { display: block !important; text-align: center; font-size: 16px; font-weight: bold; margin-bottom: 10px; }
   }
+  .print-header { display: none; }
 </style>
 </head>
 <body>
 
 <h1>Metal GST Calculator</h1>
 
-<div class="card" id="formCard">
+<div class="card no-print" id="formCard">
   <div class="row">
+    <div style="flex: 1.2;">
+      <label>Month</label>
+      <input type="month" id="monthSelect" value="">
+    </div>
     <div style="flex: 1.2;">
       <label>Invoice No</label>
       <input type="number" id="invoiceNo" inputmode="numeric" placeholder="e.g. 272">
@@ -94,7 +121,6 @@
     </div>
   </div>
 
-  <!-- Swapped: Total Amount is now on top -->
   <label>Total Amount including GST (₹)</label>
   <input type="number" id="totalAmount" inputmode="decimal" placeholder="e.g. 100000" step="0.01" enterkeyhint="next">
 
@@ -106,13 +132,22 @@
 </div>
 
 <div class="card">
-  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+  <div class="print-header" id="printHeader">Metal GST Calculator</div>
+  
+  <div class="summary-box">
+    <div class="summary-row"><span>Total Gold Weight:</span> <span id="totalGoldWeight">0.000 g</span></div>
+    <div class="summary-row"><span>Total Silver Weight:</span> <span id="totalSilverWeight">0.000 g</span></div>
+    <div class="summary-row"><span>Total Nett Amount:</span> <span id="totalNettAmount">₹0.00</span></div>
+  </div>
+
+  <div class="no-print" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
     <strong style="font-size:15px;">History</strong>
     <div style="display:flex; gap:8px;">
       <button class="warning" style="width:auto; padding:6px 10px; font-size:12px; margin-bottom:0;" onclick="printTable()">Print / PDF</button>
       <button class="danger" style="width:auto; padding:6px 10px; font-size:12px; margin-bottom:0;" onclick="clearAll()">Clear All</button>
     </div>
   </div>
+  
   <div class="table-wrap">
     <table id="entryTable">
       <thead>
@@ -131,7 +166,19 @@
       <tbody id="tableBody"></tbody>
     </table>
   </div>
-  <div id="emptyMsg" class="empty">No entries yet.</div>
+  <div id="emptyMsg" class="empty">No entries for this month.</div>
+</div>
+
+<!-- Modal for Transaction Details -->
+<div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
+  <div class="modal-content" onclick="event.stopPropagation()">
+    <h3 id="modalTitle">Transaction Details</h3>
+    <div id="modalDetails"></div>
+    <div class="modal-actions">
+      <button class="warning" id="modalEditBtn">Edit</button>
+      <button class="secondary" onclick="closeModal(event)">Close</button>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -141,6 +188,13 @@
   const SILVER_RATE_KEY = 'metalGstLastSilverRateV2';
   let editingId = null;
   let selectedMetal = 'Gold';
+  let selectedMonth = '';
+
+  // Initialize Month to current month
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonth = String(now.getMonth() + 1).padStart(2, '0');
+  selectedMonth = `${currentYear}-${currentMonth}`;
 
   function getEntries() {
     try {
@@ -154,14 +208,16 @@
     localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
   }
 
-  function getLastInvoiceNo() {
-    return parseInt(localStorage.getItem(INVOICE_KEY)) || 0;
+  function getLastInvoiceNo(month) {
+    const entries = getEntries().filter(e => e.month === month);
+    if (entries.length === 0) return parseInt(localStorage.getItem(INVOICE_KEY + '_' + month)) || 0;
+    return Math.max(...entries.map(e => e.invoiceNo || 0));
   }
 
-  function saveLastInvoiceNo(no) {
-    const currentSaved = getLastInvoiceNo();
+  function saveLastInvoiceNo(month, no) {
+    const currentSaved = getLastInvoiceNo(month);
     if (no > currentSaved) {
-      localStorage.setItem(INVOICE_KEY, no);
+      localStorage.setItem(INVOICE_KEY + '_' + month, no);
     }
   }
 
@@ -187,50 +243,71 @@
     return Date.now().toString(36) + Math.random().toString(36).substr(2);
   }
 
-  // Metal Toggle Logic with auto-focus on Total Amount
+  function formatMonthLabel(monthStr) {
+    if (!monthStr) return '';
+    const [year, month] = monthStr.split('-');
+    const date = new Date(year, month - 1);
+    return date.toLocaleString('default', { month: 'short', year: 'numeric' });
+  }
+
   function setMetal(metal, focusOnAmount = true) {
     selectedMetal = metal;
     document.getElementById('btnGold').classList.toggle('active', metal === 'Gold');
     document.getElementById('btnSilver').classList.toggle('active', metal === 'Silver');
     
-    // Auto-fill the last used rate for this metal
     const lastRate = getLastRate(metal);
-    const rateInput = document.getElementById('rate');
-    rateInput.value = lastRate;
+    document.getElementById('rate').value = lastRate;
     
-    // Focus the Total Amount box (since that's the first thing typed)
     if (focusOnAmount) {
-      const amountInput = document.getElementById('totalAmount');
-      amountInput.focus();
+      document.getElementById('totalAmount').focus();
     }
   }
 
+  function updateSummary(entries) {
+    let goldWeight = 0;
+    let silverWeight = 0;
+    let totalNett = 0;
+
+    entries.forEach(entry => {
+      if (entry.metalType === 'Gold') goldWeight += entry.weight;
+      if (entry.metalType === 'Silver') silverWeight += entry.weight;
+      totalNett += entry.nett;
+    });
+
+    document.getElementById('totalGoldWeight').textContent = formatWeight(goldWeight) + ' g';
+    document.getElementById('totalSilverWeight').textContent = formatWeight(silverWeight) + ' g';
+    document.getElementById('totalNettAmount').textContent = '₹' + formatCurrency(totalNett);
+  }
+
   function render() {
-    const entries = getEntries();
+    const allEntries = getEntries();
+    const filteredEntries = allEntries.filter(e => e.month === selectedMonth);
     
-    entries.sort((a, b) => (a.invoiceNo || 0) - (b.invoiceNo || 0));
+    filteredEntries.sort((a, b) => (a.invoiceNo || 0) - (b.invoiceNo || 0));
     
     const tbody = document.getElementById('tableBody');
     const emptyMsg = document.getElementById('emptyMsg');
     const invoiceInput = document.getElementById('invoiceNo');
     
     tbody.innerHTML = '';
+    updateSummary(filteredEntries);
 
-    if (entries.length === 0) {
+    if (filteredEntries.length === 0) {
       emptyMsg.style.display = 'block';
       if (!editingId) {
-        invoiceInput.value = getLastInvoiceNo() + 1;
+        invoiceInput.value = getLastInvoiceNo(selectedMonth) + 1;
       }
     } else {
       emptyMsg.style.display = 'none';
       if (!editingId) {
-        const maxInvoice = Math.max(...entries.map(e => e.invoiceNo || 0));
+        const maxInvoice = Math.max(...filteredEntries.map(e => e.invoiceNo || 0));
         invoiceInput.value = maxInvoice + 1;
       }
     }
 
-    entries.forEach((entry) => {
+    filteredEntries.forEach((entry) => {
       const tr = document.createElement('tr');
+      tr.onclick = () => showModal(entry.id);
       tr.innerHTML = `
         <td class="sticky-col">${entry.invoiceNo || '-'}</td>
         <td>${entry.metalType}</td>
@@ -242,13 +319,45 @@
         <td>${formatCurrency(entry.nett)}</td>
         <td class="no-print">
           <div class="action-btns">
-            <button class="warning" onclick="editEntry('${entry.id}')">Edit</button>
-            <button class="danger" onclick="deleteEntry('${entry.id}')">Del</button>
+            <button class="danger" onclick="event.stopPropagation(); deleteEntry('${entry.id}')">Del</button>
           </div>
         </td>
       `;
       tbody.appendChild(tr);
     });
+  }
+
+  function showModal(id) {
+    const entries = getEntries();
+    const entry = entries.find(e => e.id === id);
+    if (!entry) return;
+
+    document.getElementById('modalTitle').textContent = `Invoice No: ${entry.invoiceNo}`;
+    
+    const details = `
+      <div class="modal-detail"><span>Metal Type</span><span>${entry.metalType}</span></div>
+      <div class="modal-detail"><span>Weight</span><span>${formatWeight(entry.weight)} g</span></div>
+      <div class="modal-detail"><span>Rate</span><span>₹${formatCurrency(entry.rate)} /g</span></div>
+      <div class="modal-detail"><span>Amount (before GST)</span><span>₹${formatCurrency(entry.amountBeforeGst)}</span></div>
+      <div class="modal-detail"><span>CGST (1.5%)</span><span>₹${formatCurrency(entry.cgst)}</span></div>
+      <div class="modal-detail"><span>SGST (1.5%)</span><span>₹${formatCurrency(entry.sgst)}</span></div>
+      <div class="modal-detail" style="border-bottom: none; font-weight: bold;"><span>Nett Amount</span><span>₹${formatCurrency(entry.nett)}</span></div>
+    `;
+    
+    document.getElementById('modalDetails').innerHTML = details;
+    
+    const editBtn = document.getElementById('modalEditBtn');
+    editBtn.onclick = () => {
+      closeModal();
+      editEntry(id);
+    };
+
+    document.getElementById('modalOverlay').classList.add('show');
+  }
+
+  function closeModal(event) {
+    if (event && event.target !== document.getElementById('modalOverlay') && event.target.className !== 'secondary') return;
+    document.getElementById('modalOverlay').classList.remove('show');
   }
 
   function addEntry() {
@@ -257,18 +366,9 @@
     const totalAmount = parseFloat(document.getElementById('totalAmount').value);
     const invoiceNo = parseInt(document.getElementById('invoiceNo').value);
 
-    if (!invoiceNo || invoiceNo <= 0) {
-      alert('Please enter a valid Invoice Number.');
-      return;
-    }
-    if (!rate || rate <= 0) {
-      alert('Please enter a valid rate per gram.');
-      return;
-    }
-    if (!totalAmount || totalAmount <= 0) {
-      alert('Please enter a valid total amount.');
-      return;
-    }
+    if (!invoiceNo || invoiceNo <= 0) { alert('Please enter a valid Invoice Number.'); return; }
+    if (!rate || rate <= 0) { alert('Please enter a valid rate per gram.'); return; }
+    if (!totalAmount || totalAmount <= 0) { alert('Please enter a valid total amount.'); return; }
 
     const amountBeforeGst = totalAmount / 1.03;
     const cgst = amountBeforeGst * 0.015;
@@ -291,6 +391,7 @@
           sgst,
           nett,
           weight
+          // Note: The month stays the same as when it was originally created
         };
         saveEntries(entries);
       }
@@ -298,6 +399,7 @@
     } else {
       const entry = {
         id: generateId(),
+        month: selectedMonth,
         invoiceNo,
         metalType,
         rate,
@@ -311,13 +413,11 @@
       entries.push(entry);
       saveEntries(entries);
       
-      saveLastInvoiceNo(invoiceNo);
+      saveLastInvoiceNo(selectedMonth, invoiceNo);
       saveLastRate(metalType, rate);
       
       document.getElementById('totalAmount').value = '';
       document.getElementById('invoiceNo').value = invoiceNo + 1;
-      
-      // Jump back to Total Amount for the next bill
       document.getElementById('totalAmount').focus();
     }
 
@@ -331,10 +431,7 @@
 
     editingId = id;
     document.getElementById('invoiceNo').value = entry.invoiceNo;
-    
     setMetal(entry.metalType, false); 
-    
-    // Set the specific rate for this old bill
     document.getElementById('rate').value = entry.rate;
     document.getElementById('totalAmount').value = entry.nett;
 
@@ -346,7 +443,6 @@
 
     window.scrollTo({ top: 0, behavior: 'smooth' });
     
-    // Focus on Rate box for quick editing
     setTimeout(() => {
       const rateInput = document.getElementById('rate');
       rateInput.focus();
@@ -385,22 +481,27 @@
   }
 
   function clearAll() {
-    if (confirm('Are you sure you want to clear ALL entries? This cannot be undone.')) {
-      localStorage.removeItem(STORAGE_KEY);
+    if (confirm('Are you sure you want to clear ALL entries for this month? This cannot be undone.')) {
+      let entries = getEntries();
+      entries = entries.filter(e => e.month !== selectedMonth);
+      saveEntries(entries);
       render();
     }
   }
 
   function printTable() {
-    const entries = getEntries();
-    if (entries.length === 0) {
-      alert('No entries to print.');
+    const filteredEntries = getEntries().filter(e => e.month === selectedMonth);
+    if (filteredEntries.length === 0) {
+      alert('No entries for this month to print.');
       return;
     }
+    
+    // Update the print header with the month
+    document.getElementById('printHeader').textContent = `Metal GST Calculator - ${formatMonthLabel(selectedMonth)}`;
     window.print();
   }
 
-  // Add keyboard "Next" functionality between Total Amount and Rate
+  // Keyboard navigation
   document.getElementById('totalAmount').addEventListener('keydown', function(e) {
     if (e.key === 'Enter' || e.keyCode === 13) {
       e.preventDefault();
@@ -416,7 +517,14 @@
     }
   });
 
+  // Month selector listener
+  document.getElementById('monthSelect').addEventListener('change', function(e) {
+    selectedMonth = e.target.value;
+    render();
+  });
+
   // Initialize the app
+  document.getElementById('monthSelect').value = selectedMonth;
   setMetal('Gold', false);
   render();
 </script>
