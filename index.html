@@ -8,34 +8,35 @@
 <style>
   * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
   body { margin: 0; padding: 12px; background: #f2f2f7; color: #1c1c1e; }
-  h1 { font-size: 20px; text-align: center; margin: 10px 0; }
-  .card { background: #fff; border-radius: 12px; padding: 12px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-  label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px; color: #3a3a3c; }
-  select, input { width: 100%; padding: 10px; font-size: 16px; border: 1px solid #c7c7cc; border-radius: 8px; margin-bottom: 10px; background: #fff; }
-  button { width: 100%; padding: 12px; font-size: 16px; font-weight: 600; border: none; border-radius: 8px; background: #007aff; color: #fff; cursor: pointer; margin-bottom: 8px; }
+  h1 { font-size: 20px; text-align: center; margin: 10px 0 15px 0; }
+  .card { background: #fff; border-radius: 12px; padding: 16px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+  label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: #3a3a3c; }
+  select, input { width: 100%; padding: 12px; font-size: 16px; border: 1px solid #c7c7cc; border-radius: 8px; margin-bottom: 16px; background: #fff; }
+  select:focus, input:focus { outline: none; border-color: #007aff; box-shadow: 0 0 0 2px rgba(0,122,255,0.2); }
+  button { width: 100%; padding: 14px; font-size: 16px; font-weight: 600; border: none; border-radius: 8px; background: #007aff; color: #fff; cursor: pointer; margin-bottom: 8px; }
   button:active { opacity: 0.7; }
   button.danger { background: #ff3b30; }
   button.secondary { background: #8e8e93; }
   button.warning { background: #ff9500; }
-  .row { display: flex; gap: 10px; }
+  .row { display: flex; gap: 12px; }
   .row > div { flex: 1; }
   
-  /* Metal Toggle Buttons */
-  .metal-toggle { display: flex; gap: 8px; }
-  .metal-toggle button { flex: 1; padding: 10px; font-size: 15px; border: 1px solid #c7c7cc; background: #fff; color: #1c1c1e; border-radius: 8px; margin-bottom: 0; transition: all 0.2s ease; }
+  /* Metal Toggle Buttons - Full Width */
+  .metal-toggle { display: flex; gap: 10px; margin-bottom: 16px; }
+  .metal-toggle button { flex: 1; padding: 14px; font-size: 16px; border: 1px solid #c7c7cc; background: #fff; color: #1c1c1e; border-radius: 8px; margin-bottom: 0; transition: all 0.2s ease; }
   .metal-toggle button.active { border-color: transparent; box-shadow: inset 0 2px 4px rgba(0,0,0,0.1); }
   #btnGold.active { background: #ffcc00; color: #1c1c1e; }
   #btnSilver.active { background: #8e8e93; color: #fff; }
 
-  .summary-box { background: #f8f9fa; border: 1px solid #e5e5ea; border-radius: 8px; padding: 10px; margin-bottom: 12px; font-size: 13px; }
-  .summary-row { display: flex; justify-content: space-between; margin-bottom: 4px; }
+  .summary-box { background: #f8f9fa; border: 1px solid #e5e5ea; border-radius: 8px; padding: 12px; margin-bottom: 16px; font-size: 13px; }
+  .summary-row { display: flex; justify-content: space-between; margin-bottom: 6px; }
   .summary-row:last-child { margin-bottom: 0; }
   .summary-row span:first-child { font-weight: 600; color: #3a3a3c; }
   .summary-row span:last-child { font-weight: 700; color: #007aff; }
 
-  .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; position: relative; }
+  .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; position: relative; margin-top: 8px; }
   table { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 750px; }
-  th, td { padding: 8px 6px; text-align: right; border-bottom: 1px solid #e5e5ea; white-space: nowrap; }
+  th, td { padding: 10px 8px; text-align: right; border-bottom: 1px solid #e5e5ea; white-space: nowrap; }
   th { background: #f2f2f7; font-weight: 700; position: sticky; top: 0; }
   td:first-child, th:first-child { text-align: center; }
   td:nth-child(2), th:nth-child(2) { text-align: left; }
@@ -62,7 +63,7 @@
   tbody tr:hover { background-color: #e5f0ff; }
 
   .action-btns { display: flex; gap: 6px; justify-content: center; }
-  .action-btns button { width: auto; padding: 4px 8px; font-size: 11px; margin-bottom: 0; }
+  .action-btns button { width: auto; padding: 4px 10px; font-size: 11px; margin-bottom: 0; }
   .empty { text-align: center; color: #8e8e93; padding: 20px; font-size: 14px; }
 
   /* Modal Styles */
@@ -76,11 +77,11 @@
     box-shadow: 0 4px 15px rgba(0,0,0,0.2); position: relative; animation: popIn 0.2s ease-out;
   }
   @keyframes popIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-  .modal-content h3 { margin-top: 0; text-align: center; font-size: 18px; }
-  .modal-detail { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #f2f2f7; font-size: 14px; }
+  .modal-content h3 { margin-top: 0; text-align: center; font-size: 18px; margin-bottom: 15px; }
+  .modal-detail { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f2f2f7; font-size: 14px; }
   .modal-detail span:first-child { font-weight: 600; color: #8e8e93; }
   .modal-detail span:last-child { font-weight: 600; color: #1c1c1e; }
-  .modal-actions { display: flex; gap: 10px; margin-top: 15px; }
+  .modal-actions { display: flex; gap: 10px; margin-top: 20px; }
   .modal-actions button { flex: 1; margin-bottom: 0; }
 
   /* Print styles */
@@ -89,11 +90,11 @@
     .card { box-shadow: none; padding: 0; margin: 0; border: none; }
     .no-print, #formCard, .modal-overlay { display: none !important; }
     table { min-width: 100%; border: 1px solid #000; }
-    th, td { border: 1px solid #000; padding: 4px; background: transparent !important; }
+    th, td { border: 1px solid #000; padding: 6px; background: transparent !important; }
     .action-btns { display: none; }
     .sticky-col { position: static; box-shadow: none; }
-    .summary-box { border: 1px solid #000; margin-bottom: 10px; page-break-inside: avoid; }
-    .print-header { display: block !important; text-align: center; font-size: 16px; font-weight: bold; margin-bottom: 10px; }
+    .summary-box { border: 1px solid #000; margin-bottom: 12px; page-break-inside: avoid; }
+    .print-header { display: block !important; text-align: center; font-size: 16px; font-weight: bold; margin-bottom: 12px; }
   }
   .print-header { display: none; }
 </style>
@@ -103,31 +104,35 @@
 <h1>Metal GST Calculator</h1>
 
 <div class="card no-print" id="formCard">
+  <!-- Row 1: Month and Invoice No -->
   <div class="row">
-    <div style="flex: 1.2;">
+    <div>
       <label>Month</label>
       <input type="month" id="monthSelect" value="">
     </div>
-    <div style="flex: 1.2;">
+    <div>
       <label>Invoice No</label>
       <input type="number" id="invoiceNo" inputmode="numeric" placeholder="e.g. 272">
     </div>
-    <div style="flex: 2;">
-      <label>Metal Type</label>
-      <div class="metal-toggle">
-        <button type="button" id="btnGold" class="active" onclick="setMetal('Gold')">Gold</button>
-        <button type="button" id="btnSilver" onclick="setMetal('Silver')">Silver</button>
-      </div>
-    </div>
   </div>
 
+  <!-- Row 2: Metal Type (Full width buttons) -->
+  <label>Metal Type</label>
+  <div class="metal-toggle">
+    <button type="button" id="btnGold" class="active" onclick="setMetal('Gold')">Gold</button>
+    <button type="button" id="btnSilver" onclick="setMetal('Silver')">Silver</button>
+  </div>
+
+  <!-- Row 3: Total Amount -->
   <label>Total Amount including GST (₹)</label>
   <input type="number" id="totalAmount" inputmode="decimal" placeholder="e.g. 100000" step="0.01" enterkeyhint="next">
 
+  <!-- Row 4: Rate per gram -->
   <label>Rate per gram (₹)</label>
   <input type="number" id="rate" inputmode="decimal" placeholder="e.g. 6000" step="0.01" enterkeyhint="done">
 
-  <button id="submitBtn" class="primary" onclick="addEntry()">Add Entry</button>
+  <!-- Row 5: Submit Button -->
+  <button id="submitBtn" class="primary" onclick="addEntry()" style="margin-top: 8px;">Add Entry</button>
   <button id="cancelBtn" class="secondary" style="display:none;" onclick="cancelEdit()">Cancel Edit</button>
 </div>
 
@@ -143,8 +148,8 @@
   <div class="no-print" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
     <strong style="font-size:15px;">History</strong>
     <div style="display:flex; gap:8px;">
-      <button class="warning" style="width:auto; padding:6px 10px; font-size:12px; margin-bottom:0;" onclick="printTable()">Print / PDF</button>
-      <button class="danger" style="width:auto; padding:6px 10px; font-size:12px; margin-bottom:0;" onclick="clearAll()">Clear All</button>
+      <button class="warning" style="width:auto; padding:6px 12px; font-size:12px; margin-bottom:0;" onclick="printTable()">Print / PDF</button>
+      <button class="danger" style="width:auto; padding:6px 12px; font-size:12px; margin-bottom:0;" onclick="clearAll()">Clear All</button>
     </div>
   </div>
   
@@ -391,7 +396,6 @@
           sgst,
           nett,
           weight
-          // Note: The month stays the same as when it was originally created
         };
         saveEntries(entries);
       }
@@ -496,7 +500,6 @@
       return;
     }
     
-    // Update the print header with the month
     document.getElementById('printHeader').textContent = `Metal GST Calculator - ${formatMonthLabel(selectedMonth)}`;
     window.print();
   }
