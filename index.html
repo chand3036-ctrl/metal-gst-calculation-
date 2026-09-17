@@ -26,13 +26,30 @@
   #btnGold.active { background: #ffcc00; color: #1c1c1e; }
   #btnSilver.active { background: #8e8e93; color: #fff; }
 
-  .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; position: relative; }
   table { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 750px; }
   th, td { padding: 8px 6px; text-align: right; border-bottom: 1px solid #e5e5ea; white-space: nowrap; }
   th { background: #f2f2f7; font-weight: 700; position: sticky; top: 0; }
   td:first-child, th:first-child { text-align: center; }
   td:nth-child(2), th:nth-child(2) { text-align: left; }
   
+  /* Sticky First Column (Invoice Number) */
+  .sticky-col {
+    position: sticky;
+    left: 0;
+    z-index: 2;
+    box-shadow: 2px 0 5px -2px rgba(0,0,0,0.15);
+  }
+  th.sticky-col {
+    position: sticky;
+    top: 0;
+    left: 0;
+    z-index: 3;
+    background-color: #f2f2f7 !important;
+  }
+  tbody tr:nth-child(even) .sticky-col { background-color: #f2f9ff !important; }
+  tbody tr:nth-child(odd) .sticky-col { background-color: #ffffff !important; }
+
   /* Option A: Alternating row colors */
   tbody tr:nth-child(even) { background-color: #f2f9ff; }
   tbody tr:nth-child(odd) { background-color: #ffffff; }
@@ -53,6 +70,7 @@
     table { min-width: 100%; border: 1px solid #000; }
     th, td { border: 1px solid #000; padding: 4px; background: transparent !important; }
     .action-btns { display: none; }
+    .sticky-col { position: static; box-shadow: none; }
   }
 </style>
 </head>
@@ -97,7 +115,7 @@
     <table id="entryTable">
       <thead>
         <tr>
-          <th>Inv No</th>
+          <th class="sticky-col">Inv No</th>
           <th>Metal</th>
           <th>Weight (g)</th>
           <th>Rate (₹/g)</th>
@@ -213,7 +231,7 @@
     entries.forEach((entry) => {
       const tr = document.createElement('tr');
       tr.innerHTML = `
-        <td>${entry.invoiceNo || '-'}</td>
+        <td class="sticky-col">${entry.invoiceNo || '-'}</td>
         <td>${entry.metalType}</td>
         <td>${formatWeight(entry.weight)}</td>
         <td>${formatCurrency(entry.rate)}</td>
