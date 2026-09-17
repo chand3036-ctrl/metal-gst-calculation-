@@ -18,6 +18,14 @@
   button.warning { background: #ff9500; }
   .row { display: flex; gap: 10px; }
   .row > div { flex: 1; }
+  
+  /* Metal Toggle Buttons */
+  .metal-toggle { display: flex; gap: 8px; }
+  .metal-toggle button { flex: 1; padding: 10px; font-size: 15px; border: 1px solid #c7c7cc; background: #fff; color: #1c1c1e; border-radius: 8px; margin-bottom: 0; transition: all 0.2s ease; }
+  .metal-toggle button.active { border-color: transparent; box-shadow: inset 0 2px 4px rgba(0,0,0,0.1); }
+  #btnGold.active { background: #ffcc00; color: #1c1c1e; }
+  #btnSilver.active { background: #8e8e93; color: #fff; }
+
   .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
   table { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 750px; }
   th, td { padding: 8px 6px; text-align: right; border-bottom: 1px solid #e5e5ea; white-space: nowrap; }
@@ -54,16 +62,16 @@
 
 <div class="card" id="formCard">
   <div class="row">
-    <div>
+    <div style="flex: 1.2;">
       <label>Invoice No</label>
       <input type="number" id="invoiceNo" inputmode="numeric" placeholder="e.g. 272">
     </div>
-    <div>
+    <div style="flex: 2;">
       <label>Metal Type</label>
-      <select id="metalType">
-        <option value="Gold">Gold</option>
-        <option value="Silver">Silver</option>
-      </select>
+      <div class="metal-toggle">
+        <button type="button" id="btnGold" class="active" onclick="setMetal('Gold')">Gold</button>
+        <button type="button" id="btnSilver" onclick="setMetal('Silver')">Silver</button>
+      </div>
     </div>
   </div>
 
@@ -110,6 +118,7 @@
   const STORAGE_KEY = 'metalGstEntriesV2';
   const INVOICE_KEY = 'metalGstLastInvoiceV2';
   let editingId = null;
+  let selectedMetal = 'Gold'; // Default metal selection
 
   function getEntries() {
     try {
@@ -128,7 +137,11 @@
   }
 
   function saveLastInvoiceNo(no) {
-    localStorage.setItem(INVOICE_KEY, no);
+    const currentSaved = getLastInvoiceNo();
+    // Only update if the new number is higher, so we don't lose track when deleting
+    if (no > currentSaved) {
+      localStorage.setItem(INVOICE_KEY, no);
+    }
   }
 
   function formatCurrency(n) {
@@ -141,6 +154,13 @@
 
   function generateId() {
     return Date.now().toString(36) + Math.random().toString(36).substr(2);
+  }
+
+  // Metal Toggle Logic
+  function setMetal(metal) {
+    selectedMetal = metal;
+    document.getElementById('btnGold').classList.toggle('active', metal === 'Gold');
+    document.getElementById('btnSilver').classList.toggle('active', metal === 'Silver');
   }
 
   function render() {
@@ -158,14 +178,14 @@
     if (entries.length === 0) {
       emptyMsg.style.display = 'block';
       if (!editingId) {
-        // If no history, default invoice to 1 or let user set it based on last used
+        // If history is completely empty, continue from the last number ever used
         invoiceInput.value = getLastInvoiceNo() + 1;
       }
     } else {
       emptyMsg.style.display = 'none';
       if (!editingId) {
-        // Auto-fill next invoice number based on highest invoice number in history
-        const maxInvoice = entries.reduce((max, entry) => Math.max(max, entry.invoiceNo || 0), 0);
+        // If history exists, suggest the next highest number
+        const maxInvoice = Math.max(...entries.map(e => e.invoiceNo || 0));
         invoiceInput.value = maxInvoice + 1;
       }
     }
@@ -193,7 +213,7 @@
   }
 
   function addEntry() {
-    const metalType = document.getElementById('metalType').value;
+    const metalType = selectedMetal;
     const rate = parseFloat(document.getElementById('rate').value);
     const totalAmount = parseFloat(document.getElementById('totalAmount').value);
     const invoiceNo = parseInt(document.getElementById('invoiceNo').value);
@@ -235,10 +255,6 @@
           weight
         };
         saveEntries(entries);
-        
-        // Update last used invoice number only if this is the highest one
-        const currentMax = Math.max(...entries.map(e => e.invoiceNo || 0));
-        saveLastInvoiceNo(currentMax);
       }
       cancelEdit();
     } else {
@@ -259,12 +275,11 @@
       saveEntries(entries);
       
       // Remember the last invoice number
-      const currentMax = Math.max(...entries.map(e => e.invoiceNo || 0));
-      saveLastInvoiceNo(currentMax);
+      saveLastInvoiceNo(invoiceNo);
       
       document.getElementById('totalAmount').value = '';
       // Auto increment invoice number for next entry
-      document.getElementById('invoiceNo').value = currentMax + 1;
+      document.getElementById('invoiceNo').value = invoiceNo + 1;
       document.getElementById('totalAmount').focus();
     }
 
@@ -278,7 +293,7 @@
 
     editingId = id;
     document.getElementById('invoiceNo').value = entry.invoiceNo;
-    document.getElementById('metalType').value = entry.metalType;
+    setMetal(entry.metalType); // Update the toggle buttons
     document.getElementById('rate').value = entry.rate;
     document.getElementById('totalAmount').value = entry.nett;
 
@@ -312,14 +327,6 @@
       entries = entries.filter(e => e.id !== id);
       saveEntries(entries);
       
-      // Update the last used invoice number based on what remains
-      if (entries.length > 0) {
-        const currentMax = Math.max(...entries.map(e => e.invoiceNo || 0));
-        saveLastInvoiceNo(currentMax);
-      } else {
-        saveLastInvoiceNo(0);
-      }
-      
       // If we were editing this entry, cancel the edit
       if (editingId === id) {
         cancelEdit();
@@ -332,7 +339,6 @@
   function clearAll() {
     if (confirm('Are you sure you want to clear ALL entries? This cannot be undone.')) {
       localStorage.removeItem(STORAGE_KEY);
-      // We do NOT reset the invoice number here. It continues from the last used number.
       render();
     }
   }
