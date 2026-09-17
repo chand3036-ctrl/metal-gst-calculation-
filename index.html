@@ -117,6 +117,8 @@
 <script>
   const STORAGE_KEY = 'metalGstEntriesV2';
   const INVOICE_KEY = 'metalGstLastInvoiceV2';
+  const GOLD_RATE_KEY = 'metalGstLastGoldRateV2';
+  const SILVER_RATE_KEY = 'metalGstLastSilverRateV2';
   let editingId = null;
   let selectedMetal = 'Gold'; // Default metal selection
 
@@ -138,10 +140,19 @@
 
   function saveLastInvoiceNo(no) {
     const currentSaved = getLastInvoiceNo();
-    // Only update if the new number is higher, so we don't lose track when deleting
     if (no > currentSaved) {
       localStorage.setItem(INVOICE_KEY, no);
     }
+  }
+
+  function getLastRate(metal) {
+    const key = metal === 'Gold' ? GOLD_RATE_KEY : SILVER_RATE_KEY;
+    return localStorage.getItem(key) || '';
+  }
+
+  function saveLastRate(metal, rate) {
+    const key = metal === 'Gold' ? GOLD_RATE_KEY : SILVER_RATE_KEY;
+    localStorage.setItem(key, rate);
   }
 
   function formatCurrency(n) {
@@ -156,11 +167,22 @@
     return Date.now().toString(36) + Math.random().toString(36).substr(2);
   }
 
-  // Metal Toggle Logic
-  function setMetal(metal) {
+  // Metal Toggle Logic with auto-focus and text selection
+  function setMetal(metal, focusOnRate = true) {
     selectedMetal = metal;
     document.getElementById('btnGold').classList.toggle('active', metal === 'Gold');
     document.getElementById('btnSilver').classList.toggle('active', metal === 'Silver');
+    
+    // Auto-fill the last used rate for this metal
+    const lastRate = getLastRate(metal);
+    const rateInput = document.getElementById('rate');
+    rateInput.value = lastRate;
+    
+    // Focus the box and highlight the text so you can type over it immediately
+    if (focusOnRate) {
+      rateInput.focus();
+      rateInput.select();
+    }
   }
 
   function render() {
@@ -178,13 +200,11 @@
     if (entries.length === 0) {
       emptyMsg.style.display = 'block';
       if (!editingId) {
-        // If history is completely empty, continue from the last number ever used
         invoiceInput.value = getLastInvoiceNo() + 1;
       }
     } else {
       emptyMsg.style.display = 'none';
       if (!editingId) {
-        // If history exists, suggest the next highest number
         const maxInvoice = Math.max(...entries.map(e => e.invoiceNo || 0));
         invoiceInput.value = maxInvoice + 1;
       }
@@ -274,12 +294,14 @@
       entries.push(entry);
       saveEntries(entries);
       
-      // Remember the last invoice number
+      // Remember the last invoice number and last used rate for this metal
       saveLastInvoiceNo(invoiceNo);
+      saveLastRate(metalType, rate);
       
       document.getElementById('totalAmount').value = '';
-      // Auto increment invoice number for next entry
       document.getElementById('invoiceNo').value = invoiceNo + 1;
+      
+      // Keep the rate filled for the next bill, but clear the amount
       document.getElementById('totalAmount').focus();
     }
 
@@ -293,7 +315,11 @@
 
     editingId = id;
     document.getElementById('invoiceNo').value = entry.invoiceNo;
-    setMetal(entry.metalType); // Update the toggle buttons
+    
+    // Pass false so it doesn't auto-focus and override the input
+    setMetal(entry.metalType, false); 
+    
+    // Set the specific rate for this old bill
     document.getElementById('rate').value = entry.rate;
     document.getElementById('totalAmount').value = entry.nett;
 
@@ -317,6 +343,9 @@
     document.getElementById('cancelBtn').style.display = 'none';
     document.getElementById('formCard').classList.remove('editing-highlight');
     
+    // Restore the rate to the last used rate for the current metal
+    setMetal(selectedMetal, false);
+    
     // Re-render to fix invoice number and restore standard view
     render(); 
   }
@@ -327,7 +356,6 @@
       entries = entries.filter(e => e.id !== id);
       saveEntries(entries);
       
-      // If we were editing this entry, cancel the edit
       if (editingId === id) {
         cancelEdit();
       } else {
@@ -339,6 +367,7 @@
   function clearAll() {
     if (confirm('Are you sure you want to clear ALL entries? This cannot be undone.')) {
       localStorage.removeItem(STORAGE_KEY);
+      // Invoice and Rate memories are kept safe! 
       render();
     }
   }
@@ -353,6 +382,7 @@
   }
 
   // Initialize the app
+  setMetal('Gold', false); // Set default metal without popping up keyboard on launch
   render();
 </script>
 </body>
