@@ -94,11 +94,12 @@
     </div>
   </div>
 
-  <label>Rate per gram (₹)</label>
-  <input type="number" id="rate" inputmode="decimal" placeholder="e.g. 6000" step="0.01">
-
+  <!-- Swapped: Total Amount is now on top -->
   <label>Total Amount including GST (₹)</label>
-  <input type="number" id="totalAmount" inputmode="decimal" placeholder="e.g. 100000" step="0.01">
+  <input type="number" id="totalAmount" inputmode="decimal" placeholder="e.g. 100000" step="0.01" enterkeyhint="next">
+
+  <label>Rate per gram (₹)</label>
+  <input type="number" id="rate" inputmode="decimal" placeholder="e.g. 6000" step="0.01" enterkeyhint="done">
 
   <button id="submitBtn" class="primary" onclick="addEntry()">Add Entry</button>
   <button id="cancelBtn" class="secondary" style="display:none;" onclick="cancelEdit()">Cancel Edit</button>
@@ -139,7 +140,7 @@
   const GOLD_RATE_KEY = 'metalGstLastGoldRateV2';
   const SILVER_RATE_KEY = 'metalGstLastSilverRateV2';
   let editingId = null;
-  let selectedMetal = 'Gold'; // Default metal selection
+  let selectedMetal = 'Gold';
 
   function getEntries() {
     try {
@@ -186,8 +187,8 @@
     return Date.now().toString(36) + Math.random().toString(36).substr(2);
   }
 
-  // Metal Toggle Logic with auto-focus and text selection
-  function setMetal(metal, focusOnRate = true) {
+  // Metal Toggle Logic with auto-focus on Total Amount
+  function setMetal(metal, focusOnAmount = true) {
     selectedMetal = metal;
     document.getElementById('btnGold').classList.toggle('active', metal === 'Gold');
     document.getElementById('btnSilver').classList.toggle('active', metal === 'Silver');
@@ -197,17 +198,16 @@
     const rateInput = document.getElementById('rate');
     rateInput.value = lastRate;
     
-    // Focus the box and highlight the text so you can type over it immediately
-    if (focusOnRate) {
-      rateInput.focus();
-      rateInput.select();
+    // Focus the Total Amount box (since that's the first thing typed)
+    if (focusOnAmount) {
+      const amountInput = document.getElementById('totalAmount');
+      amountInput.focus();
     }
   }
 
   function render() {
     const entries = getEntries();
     
-    // Automatically sort entries by Invoice Number in ascending order
     entries.sort((a, b) => (a.invoiceNo || 0) - (b.invoiceNo || 0));
     
     const tbody = document.getElementById('tableBody');
@@ -279,7 +279,6 @@
     const entries = getEntries();
 
     if (editingId) {
-      // Update existing entry
       const index = entries.findIndex(e => e.id === editingId);
       if (index !== -1) {
         entries[index] = {
@@ -297,7 +296,6 @@
       }
       cancelEdit();
     } else {
-      // Add new entry
       const entry = {
         id: generateId(),
         invoiceNo,
@@ -313,14 +311,13 @@
       entries.push(entry);
       saveEntries(entries);
       
-      // Remember the last invoice number and last used rate for this metal
       saveLastInvoiceNo(invoiceNo);
       saveLastRate(metalType, rate);
       
       document.getElementById('totalAmount').value = '';
       document.getElementById('invoiceNo').value = invoiceNo + 1;
       
-      // Keep the rate filled for the next bill, but clear the amount
+      // Jump back to Total Amount for the next bill
       document.getElementById('totalAmount').focus();
     }
 
@@ -335,7 +332,6 @@
     editingId = id;
     document.getElementById('invoiceNo').value = entry.invoiceNo;
     
-    // Pass false so it doesn't auto-focus and override the input
     setMetal(entry.metalType, false); 
     
     // Set the specific rate for this old bill
@@ -349,6 +345,13 @@
     document.getElementById('formCard').classList.add('editing-highlight');
 
     window.scrollTo({ top: 0, behavior: 'smooth' });
+    
+    // Focus on Rate box for quick editing
+    setTimeout(() => {
+      const rateInput = document.getElementById('rate');
+      rateInput.focus();
+      rateInput.select();
+    }, 300);
   }
 
   function cancelEdit() {
@@ -362,10 +365,8 @@
     document.getElementById('cancelBtn').style.display = 'none';
     document.getElementById('formCard').classList.remove('editing-highlight');
     
-    // Restore the rate to the last used rate for the current metal
     setMetal(selectedMetal, false);
-    
-    // Re-render to fix invoice number and restore standard view
+    document.getElementById('totalAmount').focus();
     render(); 
   }
 
@@ -386,7 +387,6 @@
   function clearAll() {
     if (confirm('Are you sure you want to clear ALL entries? This cannot be undone.')) {
       localStorage.removeItem(STORAGE_KEY);
-      // Invoice and Rate memories are kept safe! 
       render();
     }
   }
@@ -400,8 +400,24 @@
     window.print();
   }
 
+  // Add keyboard "Next" functionality between Total Amount and Rate
+  document.getElementById('totalAmount').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' || e.keyCode === 13) {
+      e.preventDefault();
+      document.getElementById('rate').focus();
+      document.getElementById('rate').select();
+    }
+  });
+
+  document.getElementById('rate').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' || e.keyCode === 13) {
+      e.preventDefault();
+      addEntry();
+    }
+  });
+
   // Initialize the app
-  setMetal('Gold', false); // Set default metal without popping up keyboard on launch
+  setMetal('Gold', false);
   render();
 </script>
 </body>
