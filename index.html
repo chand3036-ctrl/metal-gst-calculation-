@@ -11,30 +11,61 @@
   .card { background: #fff; border-radius: 12px; padding: 12px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
   label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px; color: #3a3a3c; }
   select, input { width: 100%; padding: 10px; font-size: 16px; border: 1px solid #c7c7cc; border-radius: 8px; margin-bottom: 10px; background: #fff; }
-  button { width: 100%; padding: 12px; font-size: 16px; font-weight: 600; border: none; border-radius: 8px; background: #007aff; color: #fff; cursor: pointer; }
+  button { width: 100%; padding: 12px; font-size: 16px; font-weight: 600; border: none; border-radius: 8px; background: #007aff; color: #fff; cursor: pointer; margin-bottom: 8px; }
   button:active { opacity: 0.7; }
   button.danger { background: #ff3b30; }
+  button.secondary { background: #8e8e93; }
+  button.warning { background: #ff9500; }
   .row { display: flex; gap: 10px; }
   .row > div { flex: 1; }
   .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-  table { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 600px; }
-  th, td { padding: 6px 4px; text-align: right; border-bottom: 1px solid #e5e5ea; white-space: nowrap; }
-  th { background: #f2f2f7; font-weight: 600; position: sticky; top: 0; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 750px; }
+  th, td { padding: 8px 6px; text-align: right; border-bottom: 1px solid #e5e5ea; white-space: nowrap; }
+  th { background: #f2f2f7; font-weight: 700; position: sticky; top: 0; }
   td:first-child, th:first-child { text-align: center; }
   td:nth-child(2), th:nth-child(2) { text-align: left; }
-  .total-row { font-weight: 700; background: #f9f9f9; }
+  
+  /* Option A: Alternating row colors */
+  tbody tr:nth-child(even) { background-color: #f2f9ff; }
+  tbody tr:nth-child(odd) { background-color: #ffffff; }
+  tbody tr:hover { background-color: #e5f0ff; }
+
+  .action-btns { display: flex; gap: 6px; justify-content: center; }
+  .action-btns button { width: auto; padding: 4px 8px; font-size: 11px; margin-bottom: 0; }
   .empty { text-align: center; color: #8e8e93; padding: 20px; font-size: 14px; }
+  
+  /* Editing state highlight */
+  .editing-highlight { border: 2px solid #ff9500; box-shadow: 0 0 10px rgba(255,149,0,0.3); }
+
+  /* Print styles */
+  @media print {
+    body { background: #fff; padding: 0; margin: 0; font-size: 11px; }
+    .card { box-shadow: none; padding: 0; margin: 0; border: none; }
+    .no-print { display: none !important; }
+    table { min-width: 100%; border: 1px solid #000; }
+    th, td { border: 1px solid #000; padding: 4px; background: transparent !important; }
+    .action-btns { display: none; }
+  }
 </style>
 </head>
 <body>
+
 <h1>Metal GST Calculator</h1>
 
-<div class="card">
-  <label>Metal Type</label>
-  <select id="metalType">
-    <option value="Gold">Gold</option>
-    <option value="Silver">Silver</option>
-  </select>
+<div class="card" id="formCard">
+  <div class="row">
+    <div>
+      <label>Invoice No</label>
+      <input type="number" id="invoiceNo" inputmode="numeric" placeholder="e.g. 272">
+    </div>
+    <div>
+      <label>Metal Type</label>
+      <select id="metalType">
+        <option value="Gold">Gold</option>
+        <option value="Silver">Silver</option>
+      </select>
+    </div>
+  </div>
 
   <label>Rate per gram (₹)</label>
   <input type="number" id="rate" inputmode="decimal" placeholder="e.g. 6000" step="0.01">
@@ -42,19 +73,23 @@
   <label>Total Amount including GST (₹)</label>
   <input type="number" id="totalAmount" inputmode="decimal" placeholder="e.g. 100000" step="0.01">
 
-  <button onclick="addEntry()">Add Entry</button>
+  <button id="submitBtn" class="primary" onclick="addEntry()">Add Entry</button>
+  <button id="cancelBtn" class="secondary" style="display:none;" onclick="cancelEdit()">Cancel Edit</button>
 </div>
 
 <div class="card">
-  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
     <strong style="font-size:15px;">History</strong>
-    <button class="danger" style="width:auto; padding:6px 12px; font-size:13px;" onclick="clearAll()">Clear All</button>
+    <div style="display:flex; gap:8px;">
+      <button class="warning" style="width:auto; padding:6px 10px; font-size:12px; margin-bottom:0;" onclick="printTable()">Print / PDF</button>
+      <button class="danger" style="width:auto; padding:6px 10px; font-size:12px; margin-bottom:0;" onclick="clearAll()">Clear All</button>
+    </div>
   </div>
   <div class="table-wrap">
     <table id="entryTable">
       <thead>
         <tr>
-          <th>Sl No</th>
+          <th>Inv No</th>
           <th>Metal</th>
           <th>Weight (g)</th>
           <th>Rate (₹/g)</th>
@@ -62,6 +97,7 @@
           <th>CGST (₹)</th>
           <th>SGST (₹)</th>
           <th>Nett (₹)</th>
+          <th class="no-print">Actions</th>
         </tr>
       </thead>
       <tbody id="tableBody"></tbody>
@@ -71,7 +107,9 @@
 </div>
 
 <script>
-  const STORAGE_KEY = 'metalGstEntries';
+  const STORAGE_KEY = 'metalGstEntriesV2';
+  const INVOICE_KEY = 'metalGstLastInvoiceV2';
+  let editingId = null;
 
   function getEntries() {
     try {
@@ -85,6 +123,14 @@
     localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
   }
 
+  function getLastInvoiceNo() {
+    return parseInt(localStorage.getItem(INVOICE_KEY)) || 0;
+  }
+
+  function saveLastInvoiceNo(no) {
+    localStorage.setItem(INVOICE_KEY, no);
+  }
+
   function formatCurrency(n) {
     return n.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   }
@@ -93,22 +139,41 @@
     return n.toLocaleString('en-IN', { minimumFractionDigits: 3, maximumFractionDigits: 3 });
   }
 
+  function generateId() {
+    return Date.now().toString(36) + Math.random().toString(36).substr(2);
+  }
+
   function render() {
     const entries = getEntries();
+    
+    // Automatically sort entries by Invoice Number in ascending order
+    entries.sort((a, b) => (a.invoiceNo || 0) - (b.invoiceNo || 0));
+    
     const tbody = document.getElementById('tableBody');
     const emptyMsg = document.getElementById('emptyMsg');
+    const invoiceInput = document.getElementById('invoiceNo');
+    
     tbody.innerHTML = '';
 
     if (entries.length === 0) {
       emptyMsg.style.display = 'block';
-      return;
+      if (!editingId) {
+        // If no history, default invoice to 1 or let user set it based on last used
+        invoiceInput.value = getLastInvoiceNo() + 1;
+      }
+    } else {
+      emptyMsg.style.display = 'none';
+      if (!editingId) {
+        // Auto-fill next invoice number based on highest invoice number in history
+        const maxInvoice = entries.reduce((max, entry) => Math.max(max, entry.invoiceNo || 0), 0);
+        invoiceInput.value = maxInvoice + 1;
+      }
     }
-    emptyMsg.style.display = 'none';
 
-    entries.forEach((entry, index) => {
+    entries.forEach((entry) => {
       const tr = document.createElement('tr');
       tr.innerHTML = `
-        <td>${index + 1}</td>
+        <td>${entry.invoiceNo || '-'}</td>
         <td>${entry.metalType}</td>
         <td>${formatWeight(entry.weight)}</td>
         <td>${formatCurrency(entry.rate)}</td>
@@ -116,6 +181,12 @@
         <td>${formatCurrency(entry.cgst)}</td>
         <td>${formatCurrency(entry.sgst)}</td>
         <td>${formatCurrency(entry.nett)}</td>
+        <td class="no-print">
+          <div class="action-btns">
+            <button class="warning" onclick="editEntry('${entry.id}')">Edit</button>
+            <button class="danger" onclick="deleteEntry('${entry.id}')">Del</button>
+          </div>
+        </td>
       `;
       tbody.appendChild(tr);
     });
@@ -125,7 +196,12 @@
     const metalType = document.getElementById('metalType').value;
     const rate = parseFloat(document.getElementById('rate').value);
     const totalAmount = parseFloat(document.getElementById('totalAmount').value);
+    const invoiceNo = parseInt(document.getElementById('invoiceNo').value);
 
+    if (!invoiceNo || invoiceNo <= 0) {
+      alert('Please enter a valid Invoice Number.');
+      return;
+    }
     if (!rate || rate <= 0) {
       alert('Please enter a valid rate per gram.');
       return;
@@ -141,38 +217,136 @@
     const nett = totalAmount;
     const weight = amountBeforeGst / rate;
 
-    const entry = {
-      metalType,
-      rate,
-      amountBeforeGst,
-      cgst,
-      sgst,
-      nett,
-      weight,
-      timestamp: new Date().toISOString()
-    };
-
     const entries = getEntries();
-    entries.push(entry);
 
-    if (entries.length > 500) {
-      entries.splice(0, entries.length - 500);
+    if (editingId) {
+      // Update existing entry
+      const index = entries.findIndex(e => e.id === editingId);
+      if (index !== -1) {
+        entries[index] = {
+          ...entries[index],
+          invoiceNo,
+          metalType,
+          rate,
+          amountBeforeGst,
+          cgst,
+          sgst,
+          nett,
+          weight
+        };
+        saveEntries(entries);
+        
+        // Update last used invoice number only if this is the highest one
+        const currentMax = Math.max(...entries.map(e => e.invoiceNo || 0));
+        saveLastInvoiceNo(currentMax);
+      }
+      cancelEdit();
+    } else {
+      // Add new entry
+      const entry = {
+        id: generateId(),
+        invoiceNo,
+        metalType,
+        rate,
+        amountBeforeGst,
+        cgst,
+        sgst,
+        nett,
+        weight,
+        timestamp: new Date().toISOString()
+      };
+      entries.push(entry);
+      saveEntries(entries);
+      
+      // Remember the last invoice number
+      const currentMax = Math.max(...entries.map(e => e.invoiceNo || 0));
+      saveLastInvoiceNo(currentMax);
+      
+      document.getElementById('totalAmount').value = '';
+      // Auto increment invoice number for next entry
+      document.getElementById('invoiceNo').value = currentMax + 1;
+      document.getElementById('totalAmount').focus();
     }
 
-    saveEntries(entries);
     render();
+  }
 
+  function editEntry(id) {
+    const entries = getEntries();
+    const entry = entries.find(e => e.id === id);
+    if (!entry) return;
+
+    editingId = id;
+    document.getElementById('invoiceNo').value = entry.invoiceNo;
+    document.getElementById('metalType').value = entry.metalType;
+    document.getElementById('rate').value = entry.rate;
+    document.getElementById('totalAmount').value = entry.nett;
+
+    document.getElementById('submitBtn').textContent = 'Update Entry';
+    document.getElementById('submitBtn').classList.remove('primary');
+    document.getElementById('submitBtn').classList.add('warning');
+    document.getElementById('cancelBtn').style.display = 'block';
+    document.getElementById('formCard').classList.add('editing-highlight');
+
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function cancelEdit() {
+    editingId = null;
+    document.getElementById('invoiceNo').value = '';
+    document.getElementById('rate').value = '';
     document.getElementById('totalAmount').value = '';
-    document.getElementById('totalAmount').focus();
+    document.getElementById('submitBtn').textContent = 'Add Entry';
+    document.getElementById('submitBtn').classList.add('primary');
+    document.getElementById('submitBtn').classList.remove('warning');
+    document.getElementById('cancelBtn').style.display = 'none';
+    document.getElementById('formCard').classList.remove('editing-highlight');
+    
+    // Re-render to fix invoice number and restore standard view
+    render(); 
+  }
+
+  function deleteEntry(id) {
+    if (confirm('Are you sure you want to delete this entry? This cannot be undone.')) {
+      let entries = getEntries();
+      entries = entries.filter(e => e.id !== id);
+      saveEntries(entries);
+      
+      // Update the last used invoice number based on what remains
+      if (entries.length > 0) {
+        const currentMax = Math.max(...entries.map(e => e.invoiceNo || 0));
+        saveLastInvoiceNo(currentMax);
+      } else {
+        saveLastInvoiceNo(0);
+      }
+      
+      // If we were editing this entry, cancel the edit
+      if (editingId === id) {
+        cancelEdit();
+      } else {
+        render();
+      }
+    }
   }
 
   function clearAll() {
-    if (confirm('Are you sure you want to clear all entries? This cannot be undone.')) {
+    if (confirm('Are you sure you want to clear ALL entries? This cannot be undone.')) {
       localStorage.removeItem(STORAGE_KEY);
+      // We do NOT reset the invoice number here. It continues from the last used number.
       render();
     }
   }
 
+  function printTable() {
+    const entries = getEntries();
+    if (entries.length === 0) {
+      alert('No entries to print.');
+      return;
+    }
+    window.print();
+  }
+
+  // Initialize the app
   render();
 </script>
 </body>
