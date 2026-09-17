@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192">
+  <defs>
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFD700"/>
+      <stop offset="100%" stop-color="#DAA520"/>
+    </linearGradient>
+    <linearGradient id="silverGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#E0E0E0"/>
+      <stop offset="100%" stop-color="#A9A9A9"/>
+    </linearGradient>
+  </defs>
+  <rect width="192" height="192" rx="40" fill="#1c1c1e"/>
+  <circle cx="96" cy="96" r="70" fill="none" stroke="url(#goldGrad)" stroke-width="12"/>
+  <circle cx="96" cy="96" r="54" fill="none" stroke="url(#silverGrad)" stroke-width="8"/>
+  <text x="96" y="120" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="64" font-weight="bold" fill="#ffffff" text-anchor="middle">M</text>
+</svg>
