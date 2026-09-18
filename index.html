@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Metal GST Calculator</title>
 <link rel="apple-touch-icon" href="icon.svg">
+<script src="https://unpkg.com/dexie@4.0.8/dist/dexie.min.js"></script>
 <style>
   * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
   body { margin: 0; padding: 12px; background: #f2f2f7; color: #1c1c1e; }
@@ -68,12 +69,10 @@
   .modal-actions { display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap; }
   .modal-actions button { flex: 1; margin-bottom: 0; min-width: 100px; }
 
-  /* Invoice Form Modal Specifics */
   .invoice-form-group { margin-bottom: 12px; }
   .invoice-form-group label { font-size: 12px; margin-bottom: 4px; }
   .invoice-form-group input { padding: 10px; margin-bottom: 0; }
 
-  /* Settings Modal Specifics */
   .settings-group { margin-bottom: 20px; }
   .settings-group h4 { margin: 0 0 10px 0; font-size: 14px; color: #3a3a3c; border-bottom: 1px solid #e5e5ea; padding-bottom: 5px; }
   .month-checkbox-list { max-height: 200px; overflow-y: auto; border: 1px solid #e5e5ea; border-radius: 8px; padding: 10px; margin-bottom: 10px; }
@@ -81,36 +80,29 @@
   .month-item input { width: auto; margin: 0 10px 0 0; }
   .file-input { display: none; }
 
-  /* Print Styles for Invoice */
   #invoicePrintArea { display: none; }
   
   @media print {
     body { background: #fff; padding: 0; margin: 0; }
     .card, .modal-overlay, #formCard, .no-print, .header { display: none !important; }
-    
     #invoicePrintArea { display: block !important; width: 100%; max-width: 800px; margin: 0 auto; padding: 20px; font-family: 'Arial', sans-serif; font-size: 12px; color: #000; }
-    
     .inv-header { text-align: center; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 15px; }
     .inv-header h2 { margin: 0 0 5px 0; font-size: 24px; text-transform: uppercase; letter-spacing: 1px; }
     .inv-header p { margin: 2px 0; font-size: 11px; }
     .inv-header .gstin { font-weight: bold; }
-    
     .inv-meta { display: flex; justify-content: space-between; margin-bottom: 15px; }
     .inv-meta-left { width: 60%; }
     .inv-meta-right { width: 38%; border: 1px solid #000; padding: 5px; }
     .inv-meta-right div { display: flex; justify-content: space-between; margin-bottom: 4px; font-size: 12px; }
-    
     .inv-table { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
     .inv-table th, .inv-table td { border: 1px solid #000; padding: 6px; text-align: left; }
     .inv-table th { background: #f0f0f0; font-weight: bold; text-align: center; }
     .inv-table td.num { text-align: right; }
     .inv-table td.center { text-align: center; }
-    
     .inv-totals { width: 40%; float: right; border-collapse: collapse; margin-bottom: 15px; }
     .inv-totals td { border: 1px solid #000; padding: 6px; }
     .inv-totals td:first-child { font-weight: bold; }
     .inv-totals td:last-child { text-align: right; }
-    
     .inv-footer { clear: both; margin-top: 30px; display: flex; justify-content: space-between; font-size: 11px; }
     .inv-footer-left { width: 60%; }
     .inv-footer-right { width: 35%; text-align: right; }
@@ -269,7 +261,6 @@
       <h4>🗑️ Manage Months</h4>
       <p style="font-size:12px; color:#8e8e93; margin-bottom:10px;">Select months to delete permanently.</p>
       <div class="month-checkbox-list" id="monthCheckboxList">
-        <!-- Dynamically populated -->
       </div>
       <div style="display:flex; gap:10px;">
         <button class="danger" onclick="deleteSelectedMonths()">Delete Selected</button>
@@ -287,100 +278,141 @@
 <div id="invoicePrintArea"></div>
 
 <script>
-  const DB_NAME = 'MetalGstDB';
-  const DB_VERSION = 1;
-  const STORE_NAME = 'entries';
+  // --- DEXIE DATABASE SETUP WITH CONNECTION RECOVERY ---
+
   let db = null;
+  let dbReady = false;
 
-  let editingId = null;
-  let selectedMetal = 'Gold';
-  let selectedMonth = '';
-  let currentViewId = null;
+  const DB_NAME = 'MetalGstDB';
+  const STORE_NAME = 'entries';
 
-  const now = new Date();
-  const currentYear = now.getFullYear();
-  const currentMonth = String(now.getMonth() + 1).padStart(2, '0');
-  selectedMonth = `${currentYear}-${currentMonth}`;
+  // Check if indexedDB is available
+  function isIndexedDBAvailable() {
+    try {
+      return typeof indexedDB !== 'undefined' && indexedDB !== null;
+    } catch(e) {
+      return false;
+    }
+  }
 
-  // --- INDEXEDDB SETUP ---
-
-  function initDB() {
+  // Initialize Dexie database
+  function initDatabase() {
     return new Promise((resolve, reject) => {
-      const request = indexedDB.open(DB_NAME, DB_VERSION);
-      request.onerror = (event) => reject("IndexedDB error: " + event.target.error);
-      request.onsuccess = (event) => {
-        db = event.target.result;
-        resolve(db);
-      };
-      request.onupgradeneeded = (event) => {
-        const db = event.target.result;
-        if (!db.objectStoreNames.contains(STORE_NAME)) {
-          const store = db.createObjectStore(STORE_NAME, { keyPath: 'id' });
-          store.createIndex('month', 'month', { unique: false });
-          store.createIndex('invoiceNo', 'invoiceNo', { unique: false });
-        }
-      };
+      if (!isIndexedDBAvailable()) {
+        reject(new Error('IndexedDB is not available on this device.'));
+        return;
+      }
+
+      try {
+        db = new Dexie(DB_NAME);
+        db.version(1).stores({
+          [STORE_NAME]: 'id, month, invoiceNo, metalType'
+        });
+
+        // Listen for database close events (iOS Safari can kill the connection)
+        db.on('close', function() {
+          console.warn('IndexedDB connection closed. Attempting to reopen...');
+          db.open().then(() => {
+            console.log('IndexedDB connection reopened successfully.');
+          }).catch(err => {
+            console.error('Failed to reopen IndexedDB:', err);
+          });
+        });
+
+        // Listen for version change events
+        db.on('versionchange', function() {
+          db.close();
+        });
+
+        // Open the database
+        db.open().then(() => {
+          dbReady = true;
+          resolve(db);
+        }).catch(err => {
+          reject(err);
+        });
+
+      } catch (e) {
+        reject(e);
+      }
     });
   }
 
-  function getAllEntries() {
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction([STORE_NAME], 'readonly');
-      const store = transaction.objectStore(STORE_NAME);
-      const request = store.getAll();
-      request.onsuccess = () => resolve(request.result);
-      request.onerror = () => reject(request.error);
-    });
-  }
+  // Retry wrapper for database operations (handles iOS connection loss)
+  async function dbOperation(operation, retries = 3) {
+    for (let i = 0; i < retries; i++) {
+      try {
+        return await operation();
+      } catch (err) {
+        console.warn(`Database operation failed (attempt ${i+1}/${retries}):`, err);
+        
+        // Check if it's a connection-related error
+        const isConnectionError = 
+          err.name === 'DatabaseClosedError' ||
+          err.name === 'InvalidStateError' ||
+          err.name === 'UnknownError' ||
+          err.message?.includes('connection') ||
+          err.message?.includes('closing');
 
-  function saveEntry(entry) {
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction([STORE_NAME], 'readwrite');
-      const store = transaction.objectStore(STORE_NAME);
-      const request = store.put(entry);
-      request.onsuccess = () => resolve();
-      request.onerror = () => reject(request.error);
-    });
-  }
-
-  function deleteEntryDB(id) {
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction([STORE_NAME], 'readwrite');
-      const store = transaction.objectStore(STORE_NAME);
-      const request = store.delete(id);
-      request.onsuccess = () => resolve();
-      request.onerror = () => reject(request.error);
-    });
-  }
-
-  function deleteEntriesByMonths(monthsArray) {
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction([STORE_NAME], 'readwrite');
-      const store = transaction.objectStore(STORE_NAME);
-      const index = store.index('month');
-      
-      let deletedCount = 0;
-      let completed = 0;
-
-      monthsArray.forEach(month => {
-        const request = index.openCursor(IDBKeyRange.only(month));
-        request.onsuccess = (event) => {
-          const cursor = event.target.result;
-          if (cursor) {
-            cursor.delete();
-            deletedCount++;
-            cursor.continue();
-          } else {
-            completed++;
-            if (completed === monthsArray.length) {
-              resolve(deletedCount);
+        if (isConnectionError && i < retries - 1) {
+          // Wait before retrying
+          await new Promise(r => setTimeout(r, 500 * (i + 1)));
+          
+          // Try to reopen the database
+          try {
+            if (db) {
+              db.close();
+              await db.open();
             }
+          } catch (reopenErr) {
+            console.error('Failed to reopen DB during retry:', reopenErr);
           }
-        };
-        request.onerror = () => reject(request.error);
-      });
-      
-      if (monthsArray.length === 0) resolve(0);
+          continue;
+        }
+        throw err;
+      }
+    }
+  }
+
+  // Request persistent storage
+  async function requestPersistentStorage() {
+    try {
+      if (navigator.storage && navigator.storage.persist) {
+        const isPersisted = await navigator.storage.persist();
+        console.log('Persistent storage granted:', isPersisted);
+        return isPersisted;
+      }
+    } catch(e) {
+      console.warn('Could not request persistent storage:', e);
+    }
+    return false;
+  }
+
+  // --- DATABASE OPERATIONS ---
+
+  async function getAllEntries() {
+    return dbOperation(async () => {
+      return await db[STORE_NAME].toArray();
+    });
+  }
+
+  async function saveEntry(entry) {
+    return dbOperation(async () => {
+      await db[STORE_NAME].put(entry);
+    });
+  }
+
+  async function deleteEntryDB(id) {
+    return dbOperation(async () => {
+      await db[STORE_NAME].delete(id);
+    });
+  }
+
+  async function deleteEntriesByMonths(monthsArray) {
+    return dbOperation(async () => {
+      for (const month of monthsArray) {
+        await db[STORE_NAME].where('month').equals(month).delete();
+      }
     });
   }
 
@@ -418,18 +450,26 @@
   }
 
   function getLastRate(metal) {
-    // We no longer store last rate in localStorage to keep it clean, 
-    // but we can keep this feature by storing it in localStorage for convenience.
-    const key = metal === 'Gold' ? 'metalGstLastGoldRateV2' : 'metalGstLastSilverRateV2';
+    const key = metal === 'Gold' ? 'metalGstLastGoldRate' : 'metalGstLastSilverRate';
     return localStorage.getItem(key) || '';
   }
 
   function saveLastRate(metal, rate) {
-    const key = metal === 'Gold' ? 'metalGstLastGoldRateV2' : 'metalGstLastSilverRateV2';
+    const key = metal === 'Gold' ? 'metalGstLastGoldRate' : 'metalGstLastSilverRate';
     localStorage.setItem(key, rate);
   }
 
   // --- UI LOGIC ---
+
+  let editingId = null;
+  let selectedMetal = 'Gold';
+  let selectedMonth = '';
+  let currentViewId = null;
+
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonth = String(now.getMonth() + 1).padStart(2, '0');
+  selectedMonth = `${currentYear}-${currentMonth}`;
 
   function setMetal(metal, focusOnAmount = true) {
     selectedMetal = metal;
@@ -466,7 +506,6 @@
     if (filteredEntries.length === 0) {
       emptyMsg.style.display = 'block';
       if (!editingId) {
-        // Get last invoice number for this month
         const monthEntries = allEntries.filter(e => e.month === selectedMonth);
         const lastInv = monthEntries.length > 0 ? Math.max(...monthEntries.map(e => e.invoiceNo || 0)) : 0;
         invoiceInput.value = lastInv + 1;
@@ -684,7 +723,6 @@
       invoiceDate: document.getElementById('invDate').value
     };
 
-    // Save data back to the entry in DB
     Object.assign(entry, invData);
     await saveEntry(entry);
 
@@ -710,10 +748,10 @@
     const printHTML = `
       <div class="inv-header">
         <div style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:5px;">
-          <span>${shopCells.split('/')[0]. eventtrim()}</span>
-          <span>${shopCells.target.split('/')[1] ? shopCells.split('/')[1].trim() : '' !==}</span>
+          <span>${shopCells.split('/')[0].trim()}</span>
+          <span>${shopCells.split('/')[1] ? shopCells.split('/')[1].trim() : ''}</span>
         </div>
-        <h2>${ documentshopName}</h2>
+        <h2>${shopName}</h2>
         <p>${shopAddress}</p>
         <p class="gstin">${shopGstin} | ${shopPan}</p>
       </div>
@@ -803,13 +841,13 @@
   }
 
   function closeSettings(event) {
-    if (event &&.getElementById('settingsModalOverlay') && event.target.className !== 'secondary') return;
+    if (event && event.target !== document.getElementById('settingsModalOverlay') && event.target.className !== 'secondary') return;
     document.getElementById('settingsModalOverlay').classList.remove('show');
   }
 
   async function populateMonthCheckboxes() {
     const entries = await getAllEntries();
-    const months = [...new Set(entries.map(e => e.month))].sort().reverse(); // Newest first
+    const months = [...new Set(entries.map(e => e.month))].sort().reverse();
     
     const container = document.getElementById('monthCheckboxList');
     container.innerHTML = '';
@@ -847,8 +885,8 @@
 
     if (confirm(`Are you sure you want to delete all entries for the selected ${selectedMonths.length} month(s)? This cannot be undone.`)) {
       await deleteEntriesByMonths(selectedMonths);
-      populateMonthCheckboxes(); // Refresh list
-      render(); // Refresh main view
+      populateMonthCheckboxes();
+      render();
       alert('Selected months deleted successfully.');
     }
   }
@@ -870,7 +908,6 @@
       return;
     }
     
-    // Sort by month then invoice no
     entries.sort((a, b) => {
       if (a.month !== b.month) return a.month.localeCompare(b.month);
       return (a.invoiceNo || 0) - (b.invoiceNo || 0);
@@ -932,11 +969,11 @@
           const key = `${imp.month}_${imp.invoiceNo}`;
           if (map.has(key)) {
             const existing = map.get(key);
-            imp.id = existing.id; // Keep the same ID to overwrite
+            imp.id = existing.id;
             await saveEntry(imp);
             updatedCount++;
           } else {
-            imp.id = imp.id || generateId(); // Ensure it has an ID
+            imp.id = imp.id || generateId();
             await saveEntry(imp);
             addedCount++;
           }
@@ -949,7 +986,7 @@
       } catch (err) {
         alert('Error reading backup file: ' + err.message);
       }
-      event.target.value = ''; // Reset file input
+      event.target.value = '';
     };
     reader.readAsText(file);
   }
@@ -981,10 +1018,21 @@
   // --- INITIALIZATION ---
 
   async function init() {
-    await initDB();
-    document.getElementById('monthSelect').value = selectedMonth;
-    setMetal('Gold', false);
-    render();
+    try {
+      // Request persistent storage first
+      await requestPersistentStorage();
+
+      // Initialize database
+      await initDatabase();
+      
+      document.getElementById('monthSelect').value = selectedMonth;
+      setMetal('Gold', false);
+      await render();
+      
+    } catch (e) {
+      console.error('Initialization error:', e);
+      alert('Error initializing database: ' + e.message + '\n\nPlease try restarting the app.');
+    }
   }
 
   init();
