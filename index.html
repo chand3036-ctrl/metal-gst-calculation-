@@ -8,7 +8,9 @@
 <style>
   * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
   body { margin: 0; padding: 12px; background: #f2f2f7; color: #1c1c1e; }
-  h1 { font-size: 20px; text-align: center; margin: 10px 0 15px 0; }
+  .header { display: flex; justify-content: space-between; align-items: center; margin: 10px 0 15px 0; }
+  .header h1 { font-size: 20px; margin: 0; }
+  .gear-icon { font-size: 22px; cursor: pointer; padding: 5px; background: #fff; border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
   .card { background: #fff; border-radius: 12px; padding: 16px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
   label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: #3a3a3c; }
   select, input { width: 100%; padding: 12px; font-size: 16px; border: 1px solid #c7c7cc; border-radius: 8px; margin-bottom: 16px; background: #fff; }
@@ -18,10 +20,10 @@
   button.danger { background: #ff3b30; }
   button.secondary { background: #8e8e93; }
   button.warning { background: #ff9500; }
+  button.success { background: #34c759; }
   .row { display: flex; gap: 12px; }
   .row > div { flex: 1; }
   
-  /* Metal Toggle Buttons - Full Width */
   .metal-toggle { display: flex; gap: 10px; margin-bottom: 16px; }
   .metal-toggle button { flex: 1; padding: 14px; font-size: 16px; border: 1px solid #c7c7cc; background: #fff; color: #1c1c1e; border-radius: 8px; margin-bottom: 0; transition: all 0.2s ease; }
   .metal-toggle button.active { border-color: transparent; box-shadow: inset 0 2px 4px rgba(0,0,0,0.1); }
@@ -41,20 +43,8 @@
   td:first-child, th:first-child { text-align: center; }
   td:nth-child(2), th:nth-child(2) { text-align: left; }
   
-  /* Sticky First Column (Invoice Number) */
-  .sticky-col {
-    position: sticky;
-    left: 0;
-    z-index: 2;
-    box-shadow: 2px 0 5px -2px rgba(0,0,0,0.15);
-  }
-  th.sticky-col {
-    position: sticky;
-    top: 0;
-    left: 0;
-    z-index: 3;
-    background-color: #f2f2f7 !important;
-  }
+  .sticky-col { position: sticky; left: 0; z-index: 2; box-shadow: 2px 0 5px -2px rgba(0,0,0,0.15); }
+  th.sticky-col { position: sticky; top: 0; left: 0; z-index: 3; background-color: #f2f2f7 !important; }
   tbody tr:nth-child(even) .sticky-col { background-color: #f2f9ff !important; }
   tbody tr:nth-child(odd) .sticky-col { background-color: #ffffff !important; }
 
@@ -67,44 +57,75 @@
   .empty { text-align: center; color: #8e8e93; padding: 20px; font-size: 14px; }
 
   /* Modal Styles */
-  .modal-overlay {
-    display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;
-  }
+  .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; }
   .modal-overlay.show { display: flex; }
-  .modal-content {
-    background: #fff; border-radius: 12px; padding: 20px; width: 90%; max-width: 400px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.2); position: relative; animation: popIn 0.2s ease-out;
-  }
+  .modal-content { background: #fff; border-radius: 12px; padding: 20px; width: 90%; max-width: 400px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); position: relative; animation: popIn 0.2s ease-out; max-height: 90vh; overflow-y: auto; }
   @keyframes popIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
   .modal-content h3 { margin-top: 0; text-align: center; font-size: 18px; margin-bottom: 15px; }
   .modal-detail { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f2f2f7; font-size: 14px; }
   .modal-detail span:first-child { font-weight: 600; color: #8e8e93; }
   .modal-detail span:last-child { font-weight: 600; color: #1c1c1e; }
-  .modal-actions { display: flex; gap: 10px; margin-top: 20px; }
-  .modal-actions button { flex: 1; margin-bottom: 0; }
+  .modal-actions { display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap; }
+  .modal-actions button { flex: 1; margin-bottom: 0; min-width: 100px; }
 
-  /* Print styles */
+  /* Invoice Form Modal Specifics */
+  .invoice-form-group { margin-bottom: 12px; }
+  .invoice-form-group label { font-size: 12px; margin-bottom: 4px; }
+  .invoice-form-group input { padding: 10px; margin-bottom: 0; }
+
+  /* Settings Modal Specifics */
+  .settings-group { margin-bottom: 20px; }
+  .settings-group h4 { margin: 0 0 10px 0; font-size: 14px; color: #3a3a3c; border-bottom: 1px solid #e5e5ea; padding-bottom: 5px; }
+  .month-checkbox-list { max-height: 200px; overflow-y: auto; border: 1px solid #e5e5ea; border-radius: 8px; padding: 10px; margin-bottom: 10px; }
+  .month-item { display: flex; align-items: center; margin-bottom: 8px; font-size: 14px; }
+  .month-item input { width: auto; margin: 0 10px 0 0; }
+  .file-input { display: none; }
+
+  /* Print Styles for Invoice */
+  #invoicePrintArea { display: none; }
+  
   @media print {
-    body { background: #fff; padding: 0; margin: 0; font-size: 11px; }
-    .card { box-shadow: none; padding: 0; margin: 0; border: none; }
-    .no-print, #formCard, .modal-overlay { display: none !important; }
-    table { min-width: 100%; border: 1px solid #000; }
-    th, td { border: 1px solid #000; padding: 6px; background: transparent !important; }
-    .action-btns { display: none; }
-    .sticky-col { position: static; box-shadow: none; }
-    .summary-box { border: 1px solid #000; margin-bottom: 12px; page-break-inside: avoid; }
-    .print-header { display: block !important; text-align: center; font-size: 16px; font-weight: bold; margin-bottom: 12px; }
+    body { background: #fff; padding: 0; margin: 0; }
+    .card, .modal-overlay, #formCard, .no-print, .header { display: none !important; }
+    
+    #invoicePrintArea { display: block !important; width: 100%; max-width: 800px; margin: 0 auto; padding: 20px; font-family: 'Arial', sans-serif; font-size: 12px; color: #000; }
+    
+    .inv-header { text-align: center; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 15px; }
+    .inv-header h2 { margin: 0 0 5px 0; font-size: 24px; text-transform: uppercase; letter-spacing: 1px; }
+    .inv-header p { margin: 2px 0; font-size: 11px; }
+    .inv-header .gstin { font-weight: bold; }
+    
+    .inv-meta { display: flex; justify-content: space-between; margin-bottom: 15px; }
+    .inv-meta-left { width: 60%; }
+    .inv-meta-right { width: 38%; border: 1px solid #000; padding: 5px; }
+    .inv-meta-right div { display: flex; justify-content: space-between; margin-bottom: 4px; font-size: 12px; }
+    
+    .inv-table { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
+    .inv-table th, .inv-table td { border: 1px solid #000; padding: 6px; text-align: left; }
+    .inv-table th { background: #f0f0f0; font-weight: bold; text-align: center; }
+    .inv-table td.num { text-align: right; }
+    .inv-table td.center { text-align: center; }
+    
+    .inv-totals { width: 40%; float: right; border-collapse: collapse; margin-bottom: 15px; }
+    .inv-totals td { border: 1px solid #000; padding: 6px; }
+    .inv-totals td:first-child { font-weight: bold; }
+    .inv-totals td:last-child { text-align: right; }
+    
+    .inv-footer { clear: both; margin-top: 30px; display: flex; justify-content: space-between; font-size: 11px; }
+    .inv-footer-left { width: 60%; }
+    .inv-footer-right { width: 35%; text-align: right; }
+    .inv-signature { margin-top: 50px; border-top: 1px solid #000; padding-top: 5px; display: inline-block; width: 200px; text-align: center; }
   }
-  .print-header { display: none; }
 </style>
 </head>
 <body>
 
-<h1>Metal GST Calculator</h1>
+<div class="header no-print">
+  <h1>Metal GST Calculator</h1>
+  <div class="gear-icon" onclick="openSettings()">⚙️</div>
+</div>
 
 <div class="card no-print" id="formCard">
-  <!-- Row 1: Month and Invoice No -->
   <div class="row">
     <div>
       <label>Month</label>
@@ -116,40 +137,34 @@
     </div>
   </div>
 
-  <!-- Row 2: Metal Type (Full width buttons) -->
   <label>Metal Type</label>
   <div class="metal-toggle">
     <button type="button" id="btnGold" class="active" onclick="setMetal('Gold')">Gold</button>
     <button type="button" id="btnSilver" onclick="setMetal('Silver')">Silver</button>
   </div>
 
-  <!-- Row 3: Total Amount -->
   <label>Total Amount including GST (₹)</label>
   <input type="number" id="totalAmount" inputmode="decimal" placeholder="e.g. 100000" step="0.01" enterkeyhint="next">
 
-  <!-- Row 4: Rate per gram -->
   <label>Rate per gram (₹)</label>
   <input type="number" id="rate" inputmode="decimal" placeholder="e.g. 6000" step="0.01" enterkeyhint="done">
 
-  <!-- Row 5: Submit Button -->
   <button id="submitBtn" class="primary" onclick="addEntry()" style="margin-top: 8px;">Add Entry</button>
   <button id="cancelBtn" class="secondary" style="display:none;" onclick="cancelEdit()">Cancel Edit</button>
 </div>
 
-<div class="card">
-  <div class="print-header" id="printHeader">Metal GST Calculator</div>
-  
+<div class="card no-print">
   <div class="summary-box">
     <div class="summary-row"><span>Total Gold Weight:</span> <span id="totalGoldWeight">0.000 g</span></div>
     <div class="summary-row"><span>Total Silver Weight:</span> <span id="totalSilverWeight">0.000 g</span></div>
     <div class="summary-row"><span>Total Nett Amount:</span> <span id="totalNettAmount">₹0.00</span></div>
   </div>
 
-  <div class="no-print" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
     <strong style="font-size:15px;">History</strong>
     <div style="display:flex; gap:8px;">
       <button class="warning" style="width:auto; padding:6px 12px; font-size:12px; margin-bottom:0;" onclick="printTable()">Print / PDF</button>
-      <button class="danger" style="width:auto; padding:6px 12px; font-size:12px; margin-bottom:0;" onclick="clearAll()">Clear All</button>
+      <button class="danger" style="width:auto; padding:6px 12px; font-size:12px; margin-bottom:0;" onclick="clearCurrentMonth()">Clear Month</button>
     </div>
   </div>
   
@@ -165,7 +180,7 @@
           <th>CGST (₹)</th>
           <th>SGST (₹)</th>
           <th>Nett (₹)</th>
-          <th class="no-print">Actions</th>
+          <th>Actions</th>
         </tr>
       </thead>
       <tbody id="tableBody"></tbody>
@@ -174,67 +189,202 @@
   <div id="emptyMsg" class="empty">No entries for this month.</div>
 </div>
 
-<!-- Modal for Transaction Details -->
+<!-- Transaction Details Modal -->
 <div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
   <div class="modal-content" onclick="event.stopPropagation()">
     <h3 id="modalTitle">Transaction Details</h3>
     <div id="modalDetails"></div>
     <div class="modal-actions">
       <button class="warning" id="modalEditBtn">Edit</button>
+      <button class="success" id="modalInvoiceBtn">Generate Invoice</button>
       <button class="secondary" onclick="closeModal(event)">Close</button>
     </div>
   </div>
 </div>
 
+<!-- Invoice Details Form Modal -->
+<div class="modal-overlay" id="invoiceModalOverlay" onclick="closeInvoiceModal(event)">
+  <div class="modal-content" onclick="event.stopPropagation()">
+    <h3>Enter Invoice Details</h3>
+    <p style="font-size:12px; color:#8e8e93; text-align:center; margin-top:-10px; margin-bottom:15px;">All fields are optional</p>
+    
+    <div class="invoice-form-group">
+      <label>Customer Name</label>
+      <input type="text" id="invCustName" placeholder="e.g. Ramesh Kumar">
+    </div>
+    <div class="invoice-form-group">
+      <label>Address</label>
+      <input type="text" id="invCustAddress" placeholder="e.g. Hanamkonda">
+    </div>
+    <div class="row">
+      <div class="invoice-form-group">
+        <label>Cell No</label>
+        <input type="tel" id="invCustCell" placeholder="e.g. 9876543210">
+      </div>
+      <div class="invoice-form-group">
+        <label>PAN No</label>
+        <input type="text" id="invCustPan" placeholder="e.g. ABCDE1234F">
+      </div>
+    </div>
+    <div class="invoice-form-group">
+      <label>Date</label>
+      <input type="date" id="invDate">
+    </div>
+    <div class="invoice-form-group">
+      <label>HSN Code (Optional)</label>
+      <input type="text" id="invHsn" placeholder="e.g. 7113">
+    </div>
+    <div class="row">
+      <div class="invoice-form-group">
+        <label>Gross Wt (Optional)</label>
+        <input type="number" id="invGrossWt" placeholder="e.g. 10.5" step="0.001">
+      </div>
+      <div class="invoice-form-group">
+        <label>Description (Optional)</label>
+        <input type="text" id="invDesc" placeholder="e.g. Chain">
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="primary" id="invPrintBtn">Print Invoice</button>
+      <button class="secondary" onclick="closeInvoiceModal(event)">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Settings Modal -->
+<div class="modal-overlay" id="settingsModalOverlay" onclick="closeSettings(event)">
+  <div class="modal-content" onclick="event.stopPropagation()">
+    <h3>Settings</h3>
+    
+    <div class="settings-group">
+      <h4>📁 Backup & Export</h4>
+      <button class="primary" onclick="exportJSON()">📥 Export Backup (JSON)</button>
+      <button class="success" onclick="exportCSV()">📊 Export Data (CSV/Excel)</button>
+      <button class="warning" onclick="document.getElementById('importFile').click()">📤 Import Backup (JSON)</button>
+      <input type="file" id="importFile" class="file-input" accept=".json" onchange="importJSON(event)">
+    </div>
+
+    <div class="settings-group">
+      <h4>🗑️ Manage Months</h4>
+      <p style="font-size:12px; color:#8e8e93; margin-bottom:10px;">Select months to delete permanently.</p>
+      <div class="month-checkbox-list" id="monthCheckboxList">
+        <!-- Dynamically populated -->
+      </div>
+      <div style="display:flex; gap:10px;">
+        <button class="danger" onclick="deleteSelectedMonths()">Delete Selected</button>
+        <button class="secondary" onclick="toggleAllMonths()">Select All</button>
+      </div>
+    </div>
+
+    <div class="modal-actions" style="margin-top:20px;">
+      <button class="secondary" onclick="closeSettings(event)">Close Settings</button>
+    </div>
+  </div>
+</div>
+
+<!-- Hidden Print Area for Invoice -->
+<div id="invoicePrintArea"></div>
+
 <script>
-  const STORAGE_KEY = 'metalGstEntriesV2';
-  const INVOICE_KEY = 'metalGstLastInvoiceV2';
-  const GOLD_RATE_KEY = 'metalGstLastGoldRateV2';
-  const SILVER_RATE_KEY = 'metalGstLastSilverRateV2';
+  const DB_NAME = 'MetalGstDB';
+  const DB_VERSION = 1;
+  const STORE_NAME = 'entries';
+  let db = null;
+
   let editingId = null;
   let selectedMetal = 'Gold';
   let selectedMonth = '';
+  let currentViewId = null;
 
-  // Initialize Month to current month
   const now = new Date();
   const currentYear = now.getFullYear();
   const currentMonth = String(now.getMonth() + 1).padStart(2, '0');
   selectedMonth = `${currentYear}-${currentMonth}`;
 
-  function getEntries() {
-    try {
-      return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
-    } catch(e) {
-      return [];
-    }
+  // --- INDEXEDDB SETUP ---
+
+  function initDB() {
+    return new Promise((resolve, reject) => {
+      const request = indexedDB.open(DB_NAME, DB_VERSION);
+      request.onerror = (event) => reject("IndexedDB error: " + event.target.error);
+      request.onsuccess = (event) => {
+        db = event.target.result;
+        resolve(db);
+      };
+      request.onupgradeneeded = (event) => {
+        const db = event.target.result;
+        if (!db.objectStoreNames.contains(STORE_NAME)) {
+          const store = db.createObjectStore(STORE_NAME, { keyPath: 'id' });
+          store.createIndex('month', 'month', { unique: false });
+          store.createIndex('invoiceNo', 'invoiceNo', { unique: false });
+        }
+      };
+    });
   }
 
-  function saveEntries(entries) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
+  function getAllEntries() {
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction([STORE_NAME], 'readonly');
+      const store = transaction.objectStore(STORE_NAME);
+      const request = store.getAll();
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
   }
 
-  function getLastInvoiceNo(month) {
-    const entries = getEntries().filter(e => e.month === month);
-    if (entries.length === 0) return parseInt(localStorage.getItem(INVOICE_KEY + '_' + month)) || 0;
-    return Math.max(...entries.map(e => e.invoiceNo || 0));
+  function saveEntry(entry) {
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction([STORE_NAME], 'readwrite');
+      const store = transaction.objectStore(STORE_NAME);
+      const request = store.put(entry);
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+    });
   }
 
-  function saveLastInvoiceNo(month, no) {
-    const currentSaved = getLastInvoiceNo(month);
-    if (no > currentSaved) {
-      localStorage.setItem(INVOICE_KEY + '_' + month, no);
-    }
+  function deleteEntryDB(id) {
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction([STORE_NAME], 'readwrite');
+      const store = transaction.objectStore(STORE_NAME);
+      const request = store.delete(id);
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+    });
   }
 
-  function getLastRate(metal) {
-    const key = metal === 'Gold' ? GOLD_RATE_KEY : SILVER_RATE_KEY;
-    return localStorage.getItem(key) || '';
+  function deleteEntriesByMonths(monthsArray) {
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction([STORE_NAME], 'readwrite');
+      const store = transaction.objectStore(STORE_NAME);
+      const index = store.index('month');
+      
+      let deletedCount = 0;
+      let completed = 0;
+
+      monthsArray.forEach(month => {
+        const request = index.openCursor(IDBKeyRange.only(month));
+        request.onsuccess = (event) => {
+          const cursor = event.target.result;
+          if (cursor) {
+            cursor.delete();
+            deletedCount++;
+            cursor.continue();
+          } else {
+            completed++;
+            if (completed === monthsArray.length) {
+              resolve(deletedCount);
+            }
+          }
+        };
+        request.onerror = () => reject(request.error);
+      });
+      
+      if (monthsArray.length === 0) resolve(0);
+    });
   }
 
-  function saveLastRate(metal, rate) {
-    const key = metal === 'Gold' ? GOLD_RATE_KEY : SILVER_RATE_KEY;
-    localStorage.setItem(key, rate);
-  }
+  // --- UTILITIES ---
 
   function formatCurrency(n) {
     return n.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -255,39 +405,55 @@
     return date.toLocaleString('default', { month: 'short', year: 'numeric' });
   }
 
+  function downloadFile(content, fileName, mimeType) {
+    const blob = new Blob([content], { type: mimeType });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  function getLastRate(metal) {
+    // We no longer store last rate in localStorage to keep it clean, 
+    // but we can keep this feature by storing it in localStorage for convenience.
+    const key = metal === 'Gold' ? 'metalGstLastGoldRateV2' : 'metalGstLastSilverRateV2';
+    return localStorage.getItem(key) || '';
+  }
+
+  function saveLastRate(metal, rate) {
+    const key = metal === 'Gold' ? 'metalGstLastGoldRateV2' : 'metalGstLastSilverRateV2';
+    localStorage.setItem(key, rate);
+  }
+
+  // --- UI LOGIC ---
+
   function setMetal(metal, focusOnAmount = true) {
     selectedMetal = metal;
     document.getElementById('btnGold').classList.toggle('active', metal === 'Gold');
     document.getElementById('btnSilver').classList.toggle('active', metal === 'Silver');
-    
-    const lastRate = getLastRate(metal);
-    document.getElementById('rate').value = lastRate;
-    
-    if (focusOnAmount) {
-      document.getElementById('totalAmount').focus();
-    }
+    document.getElementById('rate').value = getLastRate(metal);
+    if (focusOnAmount) document.getElementById('totalAmount').focus();
   }
 
   function updateSummary(entries) {
-    let goldWeight = 0;
-    let silverWeight = 0;
-    let totalNett = 0;
-
+    let goldWeight = 0, silverWeight = 0, totalNett = 0;
     entries.forEach(entry => {
       if (entry.metalType === 'Gold') goldWeight += entry.weight;
       if (entry.metalType === 'Silver') silverWeight += entry.weight;
       totalNett += entry.nett;
     });
-
     document.getElementById('totalGoldWeight').textContent = formatWeight(goldWeight) + ' g';
     document.getElementById('totalSilverWeight').textContent = formatWeight(silverWeight) + ' g';
     document.getElementById('totalNettAmount').textContent = '₹' + formatCurrency(totalNett);
   }
 
-  function render() {
-    const allEntries = getEntries();
+  async function render() {
+    const allEntries = await getAllEntries();
     const filteredEntries = allEntries.filter(e => e.month === selectedMonth);
-    
     filteredEntries.sort((a, b) => (a.invoiceNo || 0) - (b.invoiceNo || 0));
     
     const tbody = document.getElementById('tableBody');
@@ -300,7 +466,10 @@
     if (filteredEntries.length === 0) {
       emptyMsg.style.display = 'block';
       if (!editingId) {
-        invoiceInput.value = getLastInvoiceNo(selectedMonth) + 1;
+        // Get last invoice number for this month
+        const monthEntries = allEntries.filter(e => e.month === selectedMonth);
+        const lastInv = monthEntries.length > 0 ? Math.max(...monthEntries.map(e => e.invoiceNo || 0)) : 0;
+        invoiceInput.value = lastInv + 1;
       }
     } else {
       emptyMsg.style.display = 'none';
@@ -332,13 +501,13 @@
     });
   }
 
-  function showModal(id) {
-    const entries = getEntries();
+  async function showModal(id) {
+    const entries = await getAllEntries();
     const entry = entries.find(e => e.id === id);
     if (!entry) return;
+    currentViewId = id;
 
     document.getElementById('modalTitle').textContent = `Invoice No: ${entry.invoiceNo}`;
-    
     const details = `
       <div class="modal-detail"><span>Metal Type</span><span>${entry.metalType}</span></div>
       <div class="modal-detail"><span>Weight</span><span>${formatWeight(entry.weight)} g</span></div>
@@ -348,15 +517,10 @@
       <div class="modal-detail"><span>SGST (1.5%)</span><span>₹${formatCurrency(entry.sgst)}</span></div>
       <div class="modal-detail" style="border-bottom: none; font-weight: bold;"><span>Nett Amount</span><span>₹${formatCurrency(entry.nett)}</span></div>
     `;
-    
     document.getElementById('modalDetails').innerHTML = details;
     
-    const editBtn = document.getElementById('modalEditBtn');
-    editBtn.onclick = () => {
-      closeModal();
-      editEntry(id);
-    };
-
+    document.getElementById('modalEditBtn').onclick = () => { closeModal(); editEntry(id); };
+    document.getElementById('modalInvoiceBtn').onclick = () => { closeModal(); openInvoiceForm(id); };
     document.getElementById('modalOverlay').classList.add('show');
   }
 
@@ -365,7 +529,7 @@
     document.getElementById('modalOverlay').classList.remove('show');
   }
 
-  function addEntry() {
+  async function addEntry() {
     const metalType = selectedMetal;
     const rate = parseFloat(document.getElementById('rate').value);
     const totalAmount = parseFloat(document.getElementById('totalAmount').value);
@@ -381,23 +545,19 @@
     const nett = totalAmount;
     const weight = amountBeforeGst / rate;
 
-    const entries = getEntries();
-
     if (editingId) {
-      const index = entries.findIndex(e => e.id === editingId);
-      if (index !== -1) {
-        entries[index] = {
-          ...entries[index],
-          invoiceNo,
-          metalType,
-          rate,
-          amountBeforeGst,
-          cgst,
-          sgst,
-          nett,
-          weight
-        };
-        saveEntries(entries);
+      const entries = await getAllEntries();
+      const entry = entries.find(e => e.id === editingId);
+      if (entry) {
+        entry.invoiceNo = invoiceNo;
+        entry.metalType = metalType;
+        entry.rate = rate;
+        entry.amountBeforeGst = amountBeforeGst;
+        entry.cgst = cgst;
+        entry.sgst = sgst;
+        entry.nett = nett;
+        entry.weight = weight;
+        await saveEntry(entry);
       }
       cancelEdit();
     } else {
@@ -414,10 +574,7 @@
         weight,
         timestamp: new Date().toISOString()
       };
-      entries.push(entry);
-      saveEntries(entries);
-      
-      saveLastInvoiceNo(selectedMonth, invoiceNo);
+      await saveEntry(entry);
       saveLastRate(metalType, rate);
       
       document.getElementById('totalAmount').value = '';
@@ -428,8 +585,8 @@
     render();
   }
 
-  function editEntry(id) {
-    const entries = getEntries();
+  async function editEntry(id) {
+    const entries = await getAllEntries();
     const entry = entries.find(e => e.id === id);
     if (!entry) return;
 
@@ -470,41 +627,335 @@
     render(); 
   }
 
-  function deleteEntry(id) {
+  async function deleteEntry(id) {
     if (confirm('Are you sure you want to delete this entry? This cannot be undone.')) {
-      let entries = getEntries();
-      entries = entries.filter(e => e.id !== id);
-      saveEntries(entries);
-      
-      if (editingId === id) {
-        cancelEdit();
-      } else {
-        render();
-      }
+      await deleteEntryDB(id);
+      if (editingId === id) cancelEdit();
+      else render();
     }
   }
 
-  function clearAll() {
-    if (confirm('Are you sure you want to clear ALL entries for this month? This cannot be undone.')) {
-      let entries = getEntries();
-      entries = entries.filter(e => e.month !== selectedMonth);
-      saveEntries(entries);
+  async function clearCurrentMonth() {
+    if (confirm(`Are you sure you want to clear ALL entries for ${formatMonthLabel(selectedMonth)}? This cannot be undone.`)) {
+      await deleteEntriesByMonths([selectedMonth]);
       render();
     }
   }
 
-  function printTable() {
-    const filteredEntries = getEntries().filter(e => e.month === selectedMonth);
-    if (filteredEntries.length === 0) {
-      alert('No entries for this month to print.');
+  // --- INVOICE LOGIC ---
+
+  async function openInvoiceForm(id) {
+    const entries = await getAllEntries();
+    const entry = entries.find(e => e.id === id);
+    if (!entry) return;
+
+    document.getElementById('invCustName').value = entry.customerName || '';
+    document.getElementById('invCustAddress').value = entry.customerAddress || '';
+    document.getElementById('invCustCell').value = entry.customerCell || '';
+    document.getElementById('invCustPan').value = entry.customerPan || '';
+    document.getElementById('invHsn').value = entry.hsnCode || '';
+    document.getElementById('invGrossWt').value = entry.grossWeight || '';
+    document.getElementById('invDesc').value = entry.description || '';
+    
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('invDate').value = entry.invoiceDate || today;
+
+    document.getElementById('invoiceModalOverlay').classList.add('show');
+  }
+
+  function closeInvoiceModal(event) {
+    if (event && event.target !== document.getElementById('invoiceModalOverlay') && event.target.className !== 'secondary') return;
+    document.getElementById('invoiceModalOverlay').classList.remove('show');
+  }
+
+  async function printInvoice() {
+    const entries = await getAllEntries();
+    const entry = entries.find(e => e.id === currentViewId);
+    if (!entry) return;
+
+    const invData = {
+      customerName: document.getElementById('invCustName').value,
+      customerAddress: document.getElementById('invCustAddress').value,
+      customerCell: document.getElementById('invCustCell').value,
+      customerPan: document.getElementById('invCustPan').value,
+      hsnCode: document.getElementById('invHsn').value,
+      grossWeight: document.getElementById('invGrossWt').value,
+      description: document.getElementById('invDesc').value,
+      invoiceDate: document.getElementById('invDate').value
+    };
+
+    // Save data back to the entry in DB
+    Object.assign(entry, invData);
+    await saveEntry(entry);
+
+    const shopName = "SRI AMBAJI JEWELLERS";
+    const shopAddress = "Shop No. 27, C.P. Reddy Complex, Chowrastha, Hanamkonda-506 001";
+    const shopCells = "Cell: 8555041218 / 9912444240";
+    const shopGstin = "GSTIN: 36CBFPPS3874D1ZI";
+    const shopPan = "PAN: CBFPPS3874D";
+    
+    const totalAmt = entry.amountBeforeGst;
+    const cgst = entry.cgst;
+    const sgst = entry.sgst;
+    const grossTotal = totalAmt + cgst + sgst;
+    const roundedTotal = Math.round(grossTotal);
+    const roundOff = roundedTotal - grossTotal;
+
+    let dateFormatted = '';
+    if (invData.invoiceDate) {
+      const [y, m, d] = invData.invoiceDate.split('-');
+      dateFormatted = `${d}/${m}/${y}`;
+    }
+
+    const printHTML = `
+      <div class="inv-header">
+        <div style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:5px;">
+          <span>${shopCells.split('/')[0]. eventtrim()}</span>
+          <span>${shopCells.target.split('/')[1] ? shopCells.split('/')[1].trim() : '' !==}</span>
+        </div>
+        <h2>${ documentshopName}</h2>
+        <p>${shopAddress}</p>
+        <p class="gstin">${shopGstin} | ${shopPan}</p>
+      </div>
+
+      <div class="inv-meta">
+        <div class="inv-meta-left">
+          <p><strong>Sri:</strong> ${invData.customerName || '________________________'}</p>
+          <p><strong>Address:</strong> ${invData.customerAddress || '________________________'}</p>
+          <p><strong>Cell No:</strong> ${invData.customerCell || '________________________'}</p>
+          <p><strong>PAN:</strong> ${invData.customerPan || '________________________'}</p>
+        </div>
+        <div class="inv-meta-right">
+          <div><span>Invoice No.</span> <span>${entry.invoiceNo}</span></div>
+          <div><span>Date:</span> <span>${dateFormatted || '________________'}</span></div>
+        </div>
+      </div>
+
+      <table class="inv-table">
+        <thead>
+          <tr>
+            <th style="width:5%;">Sl. No.</th>
+            <th style="width:30%;">Description of Goods</th>
+            <th style="width:10%;">HSN Code</th>
+            <th style="width:10%;">Gross Wt. in Gram</th>
+            <th style="width:10%;">Net Wt. in Gram</th>
+            <th style="width:10%;">Rate</th>
+            <th style="width:15%;">AMOUNT</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="center">1</td>
+            <td>${invData.description || entry.metalType + ' Ornament'}</td>
+            <td class="center">${invData.hsnCode || ''}</td>
+            <td class="num">${invData.grossWeight ? formatWeight(parseFloat(invData.grossWeight)) : ''}</td>
+            <td class="num">${formatWeight(entry.weight)}</td>
+            <td class="num">${formatCurrency(entry.rate)}</td>
+            <td class="num">${formatCurrency(totalAmt)}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <table class="inv-totals">
+        <tr><td>TOTAL</td><td>${formatCurrency(totalAmt)}</td></tr>
+        <tr><td>CGST 1.50%</td><td>${formatCurrency(cgst)}</td></tr>
+        <tr><td>SGST 1.50%</td><td>${formatCurrency(sgst)}</td></tr>
+        <tr><td>Round off</td><td>${roundOff >= 0 ? '+' : ''}${formatCurrency(roundOff)}</td></tr>
+        <tr><td>Net Amount</td><td>${formatCurrency(roundedTotal)}</td></tr>
+      </table>
+
+      <div class="inv-footer">
+        <div class="inv-footer-left">
+          <p><strong>Customer Signature.</strong></p>
+          <p style="margin-top:20px;"><strong>Terms & Conditions:</strong></p>
+          <p>1. Delivery goods shall be taken all testing are over.</p>
+          <p>2. Our respectively ceases after the delivery of goods.</p>
+          <div style="margin-top:20px;">
+            <p><strong>Bank Details:</strong></p>
+            <p>KOTAK MAHINDRA BANK</p>
+            <p>Branch: HANAMKONDA</p>
+            <p>A/c. No. 6145206406</p>
+            <p>IFSC. Code: KKBK0007678</p>
+          </div>
+        </div>
+        <div class="inv-footer-right">
+          <p><strong>For: ${shopName}</strong></p>
+          <div class="inv-signature">
+            <p>Authorised Signatory</p>
+          </div>
+        </div>
+      </div>
+    `;
+
+    document.getElementById('invoicePrintArea').innerHTML = printHTML;
+    document.getElementById('invoiceModalOverlay').classList.remove('show');
+    
+    setTimeout(() => {
+      window.print();
+    }, 100);
+  }
+
+  // --- SETTINGS & IMPORT/EXPORT LOGIC ---
+
+  function openSettings() {
+    populateMonthCheckboxes();
+    document.getElementById('settingsModalOverlay').classList.add('show');
+  }
+
+  function closeSettings(event) {
+    if (event &&.getElementById('settingsModalOverlay') && event.target.className !== 'secondary') return;
+    document.getElementById('settingsModalOverlay').classList.remove('show');
+  }
+
+  async function populateMonthCheckboxes() {
+    const entries = await getAllEntries();
+    const months = [...new Set(entries.map(e => e.month))].sort().reverse(); // Newest first
+    
+    const container = document.getElementById('monthCheckboxList');
+    container.innerHTML = '';
+    
+    if (months.length === 0) {
+      container.innerHTML = '<p style="font-size:12px; color:#8e8e93; text-align:center;">No data available.</p>';
+      return;
+    }
+
+    months.forEach(month => {
+      const item = document.createElement('label');
+      item.className = 'month-item';
+      item.innerHTML = `
+        <input type="checkbox" value="${month}">
+        ${formatMonthLabel(month)}
+      `;
+      container.appendChild(item);
+    });
+  }
+
+  function toggleAllMonths() {
+    const checkboxes = document.querySelectorAll('#monthCheckboxList input[type="checkbox"]');
+    const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+    checkboxes.forEach(cb => cb.checked = !allChecked);
+  }
+
+  async function deleteSelectedMonths() {
+    const checkboxes = document.querySelectorAll('#monthCheckboxList input[type="checkbox"]:checked');
+    const selectedMonths = Array.from(checkboxes).map(cb => cb.value);
+
+    if (selectedMonths.length === 0) {
+      alert('Please select at least one month to delete.');
+      return;
+    }
+
+    if (confirm(`Are you sure you want to delete all entries for the selected ${selectedMonths.length} month(s)? This cannot be undone.`)) {
+      await deleteEntriesByMonths(selectedMonths);
+      populateMonthCheckboxes(); // Refresh list
+      render(); // Refresh main view
+      alert('Selected months deleted successfully.');
+    }
+  }
+
+  async function exportJSON() {
+    const entries = await getAllEntries();
+    if (entries.length === 0) {
+      alert('No data to export.');
+      return;
+    }
+    const dataStr = JSON.stringify(entries, null, 2);
+    downloadFile(dataStr, `metal_gst_backup_${new Date().toISOString().split('T')[0]}.json`, 'application/json');
+  }
+
+  async function exportCSV() {
+    const entries = await getAllEntries();
+    if (entries.length === 0) {
+      alert('No data to export.');
       return;
     }
     
-    document.getElementById('printHeader').textContent = `Metal GST Calculator - ${formatMonthLabel(selectedMonth)}`;
-    window.print();
+    // Sort by month then invoice no
+    entries.sort((a, b) => {
+      if (a.month !== b.month) return a.month.localeCompare(b.month);
+      return (a.invoiceNo || 0) - (b.invoiceNo || 0);
+    });
+
+    const headers = ['Month', 'Invoice No', 'Date', 'Metal Type', 'Weight (g)', 'Rate (₹/g)', 'Amount (₹)', 'CGST (₹)', 'SGST (₹)', 'Nett (₹)', 'Customer Name', 'Address', 'Cell No', 'PAN No', 'HSN Code', 'Gross Wt (g)', 'Description'];
+    
+    const csvRows = [];
+    csvRows.push(headers.join(','));
+
+    entries.forEach(e => {
+      const row = [
+        `"${e.month || ''}"`,
+        `"${e.invoiceNo || ''}"`,
+        `"${e.invoiceDate || ''}"`,
+        `"${e.metalType || ''}"`,
+        `"${e.weight || ''}"`,
+        `"${e.rate || ''}"`,
+        `"${e.amountBeforeGst || ''}"`,
+        `"${e.cgst || ''}"`,
+        `"${e.sgst || ''}"`,
+        `"${e.nett || ''}"`,
+        `"${(e.customerName || '').replace(/"/g, '""')}"`,
+        `"${(e.customerAddress || '').replace(/"/g, '""')}"`,
+        `"${e.customerCell || ''}"`,
+        `"${e.customerPan || ''}"`,
+        `"${e.hsnCode || ''}"`,
+        `"${e.grossWeight || ''}"`,
+        `"${(e.description || '').replace(/"/g, '""')}"`
+      ];
+      csvRows.push(row.join(','));
+    });
+
+    const csvString = csvRows.join('\n');
+    downloadFile(csvString, `metal_gst_data_${new Date().toISOString().split('T')[0]}.csv`, 'text/csv');
   }
 
-  // Keyboard navigation
+  async function importJSON(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      try {
+        const importedEntries = JSON.parse(e.target.result);
+        if (!Array.isArray(importedEntries)) {
+          alert('Invalid backup file format.');
+          return;
+        }
+
+        const currentEntries = await getAllEntries();
+        const map = new Map();
+        currentEntries.forEach(entry => map.set(`${entry.month}_${entry.invoiceNo}`, entry));
+
+        let addedCount = 0;
+        let updatedCount = 0;
+
+        for (const imp of importedEntries) {
+          const key = `${imp.month}_${imp.invoiceNo}`;
+          if (map.has(key)) {
+            const existing = map.get(key);
+            imp.id = existing.id; // Keep the same ID to overwrite
+            await saveEntry(imp);
+            updatedCount++;
+          } else {
+            imp.id = imp.id || generateId(); // Ensure it has an ID
+            await saveEntry(imp);
+            addedCount++;
+          }
+        }
+
+        alert(`Import successful!\nAdded: ${addedCount} new entries\nUpdated: ${updatedCount} existing entries`);
+        render();
+        populateMonthCheckboxes();
+        
+      } catch (err) {
+        alert('Error reading backup file: ' + err.message);
+      }
+      event.target.value = ''; // Reset file input
+    };
+    reader.readAsText(file);
+  }
+
+  // --- EVENT LISTENERS ---
+
   document.getElementById('totalAmount').addEventListener('keydown', function(e) {
     if (e.key === 'Enter' || e.keyCode === 13) {
       e.preventDefault();
@@ -520,16 +971,23 @@
     }
   });
 
-  // Month selector listener
   document.getElementById('monthSelect').addEventListener('change', function(e) {
     selectedMonth = e.target.value;
     render();
   });
 
-  // Initialize the app
-  document.getElementById('monthSelect').value = selectedMonth;
-  setMetal('Gold', false);
-  render();
+  document.getElementById('invPrintBtn').addEventListener('click', printInvoice);
+
+  // --- INITIALIZATION ---
+
+  async function init() {
+    await initDB();
+    document.getElementById('monthSelect').value = selectedMonth;
+    setMetal('Gold', false);
+    render();
+  }
+
+  init();
 </script>
 </body>
 </html>
