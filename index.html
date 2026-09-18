@@ -82,27 +82,38 @@
 
   #invoicePrintArea { display: none; }
   
+  /* Print Styles for Invoice */
+  @page {
+    margin: 0; /* Force browser to remove default margins for headers/footers */
+  }
+  
   @media print {
     body { background: #fff; padding: 0; margin: 0; }
     .card, .modal-overlay, #formCard, .no-print, .header { display: none !important; }
+    
     #invoicePrintArea { display: block !important; width: 100%; max-width: 800px; margin: 0 auto; padding: 20px; font-family: 'Arial', sans-serif; font-size: 12px; color: #000; }
+    
     .inv-header { text-align: center; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 15px; }
     .inv-header h2 { margin: 0 0 5px 0; font-size: 24px; text-transform: uppercase; letter-spacing: 1px; }
     .inv-header p { margin: 2px 0; font-size: 11px; }
     .inv-header .gstin { font-weight: bold; }
+    
     .inv-meta { display: flex; justify-content: space-between; margin-bottom: 15px; }
     .inv-meta-left { width: 60%; }
     .inv-meta-right { width: 38%; border: 1px solid #000; padding: 5px; }
     .inv-meta-right div { display: flex; justify-content: space-between; margin-bottom: 4px; font-size: 12px; }
+    
     .inv-table { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
     .inv-table th, .inv-table td { border: 1px solid #000; padding: 6px; text-align: left; }
     .inv-table th { background: #f0f0f0; font-weight: bold; text-align: center; }
     .inv-table td.num { text-align: right; }
     .inv-table td.center { text-align: center; }
+    
     .inv-totals { width: 40%; float: right; border-collapse: collapse; margin-bottom: 15px; }
     .inv-totals td { border: 1px solid #000; padding: 6px; }
     .inv-totals td:first-child { font-weight: bold; }
     .inv-totals td:last-child { text-align: right; }
+    
     .inv-footer { clear: both; margin-top: 30px; display: flex; justify-content: space-between; font-size: 11px; }
     .inv-footer-left { width: 60%; }
     .inv-footer-right { width: 35%; text-align: right; }
@@ -729,8 +740,8 @@
     const shopName = "SRI AMBAJI JEWELLERS";
     const shopAddress = "Shop No. 27, C.P. Reddy Complex, Chowrastha, Hanamkonda-506 001";
     const shopCells = "Cell: 8555041218 / 9912444240";
-    const shopGstin = "GSTIN: 36CBFPP3874D1ZI";
-    const shopPan = "PAN: CBFPP3874D";
+    const shopGstin = "GSTIN: 36CBFPPS3874D1ZI";
+    const shopPan = "PAN: CBFPPS3874D";
     
     const totalAmt = entry.amountBeforeGst;
     const cgst = entry.cgst;
@@ -807,7 +818,7 @@
           <p><strong>Customer Signature.</strong></p>
           <p style="margin-top:20px;"><strong>Terms & Conditions:</strong></p>
           <p>1. Delivery goods shall be taken all testing are over.</p>
-          <p>2. Our responsibility ceases after the delivery of goods.</p>
+          <p>2. Our respectively ceases after the delivery of goods.</p>
           <div style="margin-top:20px;">
             <p><strong>Bank Details:</strong></p>
             <p>KOTAK MAHINDRA BANK</p>
